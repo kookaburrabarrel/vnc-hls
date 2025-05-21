@@ -1,0 +1,4 @@
+nohup: ignoring input
+[in#0 @ 0x5d4f7c6c1300] Unknown input format: 'vnc'
+Error opening input file vnc://192.168.4.102:5900.
+Error opening input files: Invalid argument

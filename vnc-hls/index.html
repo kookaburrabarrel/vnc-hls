@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>T-Bar Gates Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<style>
+  body {
+    margin: 0;
+    background: #111;
+    color: #eee;
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    margin: 1rem 0;
+  }
+  .dashboard {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 95vw;
+  }
+  .feed {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    background: #222;
+    border-radius: 6px;
+    padding: 0.5rem;
+    box-sizing: border-box;
+  }
+  .feed video {
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    background: black;
+  }
+  .feed label {
+    margin-top: 0.5rem;
+    text-align: center;
+    font-weight: bold;
+  }
+  @media (max-width: 600px) {
+    .dashboard {
+      flex-direction: column;
+      width: 100vw;
+    }
+    .feed {
+      margin-bottom: 1rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>T-Bar Gates Dashboard</h1>
+  <div class="dashboard">
+    <div class="feed">
+      <video id="video1" controls autoplay muted></video>
+      <label>192.168.4.101 (Lane 1)</label>
+    </div>
+    <div class="feed">
+      <video id="video2" controls autoplay muted></video>
+      <label>192.168.4.102 (Lane 2)</label>
+    </div>
+    <div class="feed">
+      <video id="video3" controls autoplay muted></video>
+      <label>192.168.4.103 (Lane 3)</label>
+    </div>
+    <div class="feed">
+      <video id="video4" controls autoplay muted></video>
+      <label>192.168.4.104 (Lane 4)</label>
+    </div>
+  </div>
+
+<script>
+  const streams = [
+    '/hls/lane1.m3u8',
+    '/hls/lane2.m3u8',
+    '/hls/lane3.m3u8',
+    '/hls/lane4.m3u8',
+  ];
+
+  function setupHls(videoId, streamUrl) {
+    const video = document.getElementById(videoId);
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(streamUrl);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        video.play();
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = streamUrl;
+      video.addEventListener('loadedmetadata', () => {
+        video.play();
+      });
+    } else {
+      console.warn('HLS not supported for', streamUrl);
+    }
+  }
+
+  streams.forEach((url, i) => {
+    setupHls('video' + (i + 1), url);
+  });
+</script>
+</body>
+</html>
