@@ -87,13 +87,13 @@ run_lane() {
       rm -f "$XAUTH_FILE"
 
       retry_count=$((retry_count + 1))
-    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/var/www/html/vnc-status/lane${LANE_NUM}.json"
+    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/home/user/status/lane${LANE_NUM}.json"
 
       if (( retry_count >= MAX_RETRIES )); then
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] Max retries reached on lane $LANE_NUM. Waiting 5 minutes before retrying..."
         sleep 300  # 5 minutes wait
         retry_count=0
-    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/var/www/html/vnc-status/lane${LANE_NUM}.json"
+    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/home/user/status/lane${LANE_NUM}.json"
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Restarting retries for lane $LANE_NUM."
       else
         backoff=$((RETRY_DELAY * retry_count))
