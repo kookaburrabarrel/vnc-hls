@@ -30,7 +30,7 @@ run_lane() {
 
   local retry_count=0
 
-  # Initial status write
+  # Initial status write — error, retry 0 (keep for startup)
   echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
   while true; do
@@ -71,6 +71,10 @@ run_lane() {
       HLS_PLAYLIST="$HLS_BASE/${PLAYLIST_PREFIX}${LANE_NUM}.m3u8"
       HLS_SEGMENT_PATTERN="$HLS_BASE/${PLAYLIST_PREFIX}${LANE_NUM}_%03d.ts"
 
+      # At this point, streaming is about to start — update JSON to "ok" with retry 0
+      retry_count=0
+      echo "{\"status\":\"ok\",\"ip\":\"$IP\",\"message\":\"streaming\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting ffmpeg capturing $DISPLAY and streaming to $HLS_PLAYLIST"
       ffmpeg -hide_banner -loglevel info \
         -f x11grab -r $FRAME_RATE -s $CAPTURE_RES -i "$DISPLAY" \
@@ -81,7 +85,7 @@ run_lane() {
         -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
         "$HLS_PLAYLIST"
 
-      # ffmpeg exited unexpectedly
+      # If ffmpeg exits, update JSON to error with current retry count
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] ffmpeg exited unexpectedly, killing vncviewer and Xvfb"
       kill $VNC_PID $XVFB_PID || true
       wait $VNC_PID $XVFB_PID 2>/dev/null || true
@@ -105,6 +109,7 @@ run_lane() {
     } >> "$LOG_FILE" 2>&1
   done
 }
+
 
 # Start all lanes in background
 for i in "${!IPS[@]}"; do
