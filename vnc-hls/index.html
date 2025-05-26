@@ -45,6 +45,30 @@
     text-align: center;
     font-weight: bold;
   }
+  .status {
+    margin-top: 0.25rem;
+    text-align: center;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .status-ok {
+    background-color: #4caf50; /* green */
+  }
+  .status-warning {
+    background-color: #ffeb3b; /* yellow */
+  }
+  .status-error {
+    background-color: #f44336; /* red */
+  }
   @media (max-width: 600px) {
     .dashboard {
       flex-direction: column;
@@ -59,21 +83,25 @@
 <body>
   <h1>T-Bar Gates Dashboard</h1>
   <div class="dashboard">
-    <div class="feed">
+    <div class="feed" id="feed1">
       <video id="video1" controls autoplay muted></video>
       <label>192.168.4.101 (Lane 1)</label>
+      <div class="status" id="status1"><span class="status-dot status-warning"></span><span>Loading...</span></div>
     </div>
-    <div class="feed">
+    <div class="feed" id="feed2">
       <video id="video2" controls autoplay muted></video>
       <label>192.168.4.102 (Lane 2)</label>
+      <div class="status" id="status2"><span class="status-dot status-warning"></span><span>Loading...</span></div>
     </div>
-    <div class="feed">
+    <div class="feed" id="feed3">
       <video id="video3" controls autoplay muted></video>
       <label>192.168.4.103 (Lane 3)</label>
+      <div class="status" id="status3"><span class="status-dot status-warning"></span><span>Loading...</span></div>
     </div>
-    <div class="feed">
+    <div class="feed" id="feed4">
       <video id="video4" controls autoplay muted></video>
       <label>192.168.4.104 (Lane 4)</label>
+      <div class="status" id="status4"><span class="status-dot status-warning"></span><span>Loading...</span></div>
     </div>
   </div>
 
@@ -107,6 +135,75 @@
   streams.forEach((url, i) => {
     setupHls('video' + (i + 1), url);
   });
+
+  // Status polling
+
+  // Helper to update status UI
+  function updateStatus(laneNum, statusObj) {
+    const statusDiv = document.getElementById(`status${laneNum}`);
+    if (!statusDiv) return;
+
+    // Clear previous contents
+    statusDiv.innerHTML = '';
+
+    // Create dot element
+    const dot = document.createElement('span');
+    dot.classList.add('status-dot');
+
+    let text = 'Unknown';
+    if (!statusObj) {
+      dot.classList.add('status-error');
+      text = 'No status data';
+    } else {
+      const s = statusObj.status ? statusObj.status.toLowerCase() : 'unknown';
+      switch (s) {
+        case 'ok':
+          dot.classList.add('status-ok');
+          text = 'OK';
+          break;
+        case 'retrying':
+        case 'warning':
+          dot.classList.add('status-warning');
+          text = statusObj.message || 'Warning';
+          break;
+        case 'error':
+        case 'disconnected':
+        case 'failed':
+          dot.classList.add('status-error');
+          text = statusObj.message || 'Error';
+          break;
+        default:
+          dot.classList.add('status-warning');
+          text = statusObj.message || 'Unknown';
+      }
+    }
+
+    statusDiv.appendChild(dot);
+    const spanText = document.createElement('span');
+    spanText.textContent = text;
+    statusDiv.appendChild(spanText);
+  }
+
+  async function fetchStatus(laneNum) {
+    try {
+      const resp = await fetch(`/status/lane${laneNum}.json?_=${Date.now()}`);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      updateStatus(laneNum, data);
+    } catch (e) {
+      updateStatus(laneNum, null);
+      console.error(`Failed to fetch status for lane ${laneNum}:`, e);
+    }
+  }
+
+  function pollStatuses() {
+    for (let i = 1; i <= streams.length; i++) {
+      fetchStatus(i);
+    }
+  }
+
+  pollStatuses();
+  setInterval(pollStatuses, 10000); // every 10 seconds
 </script>
 </body>
 </html>
