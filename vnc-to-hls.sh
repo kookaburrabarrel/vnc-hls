@@ -28,7 +28,7 @@ run_lane() {
   local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
 
   local retry_count=0
-    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/var/www/html/vnc-status/lane${LANE_NUM}.json"
+    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/home/user/status/lane${LANE_NUM}.json"
 
   while true; do
     {
