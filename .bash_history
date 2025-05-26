@@ -1,189 +1,3 @@
-    a.button {
-      margin-top: 8px;
-      padding: 6px 12px;
-      background: #337ab7;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    a.button:hover {
-      background: #286090;
-    }
-  </style>
-</head>
-<body>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_11/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.253.37&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_12/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.253.37&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_13/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.253.37&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_14/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.253.37&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-</body>
-</html>
-EOF
-
-ls
-cd ...
-cd ..
-ls
-cd var
-cd www
-cd html
-ls
-cd novnc
-ls
-cd noVNC
-ls
-cd ~/vnc-hls
-ls
-cd ..
-cp -r /var/www/html/novnc ~/vnc-hls/
-# Create target directory if needed
-mkdir -p ~/vnc-hls
-# Copy noVNC from /var/www/html to ~/vnc-hls
-cp -r /var/www/html/novnc ~/vnc-hls/
-ls -l /var/www/html
-ls
-cd vnc-hls
-ls
-mkdir -p ~/vnc-hls
-cd ~/vnc-hls
-git clone https://github.com/novnc/noVNC.git novnc
-cd ~/vnc-hls/novnc
-./utils/novnc_proxy --vnc localhost:5900 --listen 6081
-sudo apt-get install tmux
-tmux new -s transcoder
-top
-tee ~/vnc-hls/new.html > /dev/null << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VNC HLS Dashboard</title>
-  <style>
-    body {
-      margin: 0;
-      background: #111;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      gap: 20px;
-    }
-    .video-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    video {
-      width: 240px;
-      height: 400px;
-      background: black;
-      border: 2px solid #444;
-      border-radius: 6px;
-      pointer-events: none;
-    }
-    a.button {
-      margin-top: 8px;
-      padding: 6px 12px;
-      background: #337ab7;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    a.button:hover {
-      background: #286090;
-    }
-  </style>
-</head>
-<body>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_11/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.4.101:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.101&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_12/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.4.102:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.102&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_13/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.4.103:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.103&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_14/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.4.104:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.104&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-</body>
-</html>
-EOF
-
-tee ~/vnc-hls/new.html > /dev/null << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VNC HLS Dashboard</title>
-  <style>
-    body {
-      margin: 0;
       background: #111;
       display: flex;
       flex-wrap: wrap;
@@ -1998,3 +1812,189 @@ ls
 git add .
 git commit -m "Update all files with latest monitoring changes"
 git push
+ls
+mkdir status
+ls
+cd status
+ls
+cd ..
+cd status
+pwd
+git fetch origin && git reset --hard origin/main
+sudo reboot
+ls]=
+ls
+cd status
+ls
+nano lane1.json
+cd ..
+ls
+where ngninx
+whereis nginx
+cd etc
+cd nginx
+nano nginx.config
+ls
+nano nginx.conf
+whereis nginx.conf
+nano nginx.conf
+cd sites-enabled
+ls
+grep -r "server {" /etc/nginx/
+ls -l /etc/nginx/sites-enabled/
+sudo nano /etc/nginx/sites-available/vnc-hls
+sudo nginx -t
+sudo systemctl reload nginx
+git diff
+cd ..
+cd c..
+cd ..
+cd home
+cd user
+ls
+git diff
+ls
+cd status
+ls
+nano lane4.json
+cd ..
+ls
+mv vnc-to-hls.sh vnc-to-hls.old2
+ls
+rm Warning:
+ls
+cd '$OUTPUT_DIR'
+ls
+cd ..
+rm '$OUTPUT_DIR'
+rm -r '$OUTPUT_DIR'
+rm -r '$LOGFILE'
+ls
+rm 4.sh
+rm4n.sh
+rm 4n.sh
+rm new.sh
+rm t2.sh
+rm test.sh
+ls
+rm lane1-test.sh
+ls
+cat > vnc-to-hls.sh << 'EOF'
+#!/bin/bash
+set -euo pipefail
+
+FRAME_RATE=10
+CAPTURE_RES=480x800
+VAAPI_DEVICE="/dev/dri/renderD128"
+
+IPS=("192.168.4.101" "192.168.4.102" "192.168.4.103" "192.168.4.104")
+DISPLAYS=(":11" ":12" ":13" ":14")
+
+HLS_BASE="/home/user/vnc-hls/hls"
+PLAYLIST_PREFIX="lane"
+LOG_DIR="/home/user/vnc-hls/logs"
+mkdir -p "$LOG_DIR"
+
+MAX_RETRIES=10
+RETRY_DELAY=5  # seconds base delay, increases linearly per retry
+
+# Function to check if IP is reachable
+ping_check() {
+  ping -c 1 -W 1 "$1" &>/dev/null
+}
+
+run_lane() {
+  local IP=$1
+  local DISPLAY_NUM=$2
+  local LANE_NUM=$3
+  local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
+  local STATUS_FILE="/home/user/status/lane${LANE_NUM}.json"
+
+  local retry_count=0
+
+  # Initial status write
+  echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+
+  while true; do
+    {
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting setup for lane $LANE_NUM (IP $IP, DISPLAY $DISPLAY_NUM), attempt $((retry_count + 1))"
+
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Checking network reachability for $IP"
+      until ping_check "$IP"; do
+        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] $IP unreachable, retrying in 5 seconds..."
+        sleep 5
+      done
+
+      XAUTH_FILE=$(mktemp /tmp/.Xauthority.XXXXXX)
+      export XAUTHORITY="$XAUTH_FILE"
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Generated XAUTHORITY file at $XAUTH_FILE"
+
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting Xvfb on display $DISPLAY_NUM"
+      Xvfb "$DISPLAY_NUM" -screen 0 480x800x24 &
+      XVFB_PID=$!
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Xvfb started with PID $XVFB_PID"
+
+      sleep 2
+
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Generating xauth entry for $DISPLAY_NUM"
+      xauth generate "$DISPLAY_NUM" . trusted
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] xauth entry generated"
+
+      export DISPLAY="$DISPLAY_NUM"
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] DISPLAY set to $DISPLAY"
+
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting vncviewer on $IP (lane $LANE_NUM)"
+      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:5900" -passwd /home/user/.vnc/passwd &
+      VNC_PID=$!
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] vncviewer started with PID $VNC_PID"
+
+      sleep 5
+
+      HLS_PLAYLIST="$HLS_BASE/${PLAYLIST_PREFIX}${LANE_NUM}.m3u8"
+      HLS_SEGMENT_PATTERN="$HLS_BASE/${PLAYLIST_PREFIX}${LANE_NUM}_%03d.ts"
+
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting ffmpeg capturing $DISPLAY and streaming to $HLS_PLAYLIST"
+      ffmpeg -hide_banner -loglevel info \
+        -f x11grab -r $FRAME_RATE -s $CAPTURE_RES -i "$DISPLAY" \
+        -vaapi_device "$VAAPI_DEVICE" \
+        -vf 'format=nv12,hwupload' \
+        -c:v h264_vaapi -b:v 1M -maxrate 1M -bufsize 2M -g 30 -sc_threshold 0 \
+        -hls_time 4 -hls_list_size 12 -hls_flags delete_segments+append_list \
+        -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
+        "$HLS_PLAYLIST"
+
+      # ffmpeg exited unexpectedly
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] ffmpeg exited unexpectedly, killing vncviewer and Xvfb"
+      kill $VNC_PID $XVFB_PID || true
+      wait $VNC_PID $XVFB_PID 2>/dev/null || true
+
+      rm -f "$XAUTH_FILE"
+
+      retry_count=$((retry_count + 1))
+      echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+
+      if (( retry_count >= MAX_RETRIES )); then
+        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] Max retries reached on lane $LANE_NUM. Waiting 5 minutes before retrying..."
+        sleep 300  # 5 minutes
+        retry_count=0
+        echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Restarting retries for lane $LANE_NUM."
+      else
+        backoff=$((RETRY_DELAY * retry_count))
+        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Waiting $backoff seconds before next retry on lane $LANE_NUM"
+        sleep $backoff
+      fi
+    } >> "$LOG_FILE" 2>&1
+  done
+}
+
+# Start all lanes in background
+for i in "${!IPS[@]}"; do
+  run_lane "${IPS[$i]}" "${DISPLAYS[$i]}" "$((i + 1))" &
+done
+
+wait
+EOF
+
+ls
+sudo reboot

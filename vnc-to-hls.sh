@@ -26,9 +26,12 @@ run_lane() {
   local DISPLAY_NUM=$2
   local LANE_NUM=$3
   local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
+  local STATUS_FILE="/home/user/status/lane${LANE_NUM}.json"
 
   local retry_count=0
-    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/home/user/status/lane${LANE_NUM}.json"
+
+  # Initial status write
+  echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
   while true; do
     {
@@ -78,29 +81,27 @@ run_lane() {
         -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
         "$HLS_PLAYLIST"
 
-      # If ffmpeg exits, the script continues here:
+      # ffmpeg exited unexpectedly
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] ffmpeg exited unexpectedly, killing vncviewer and Xvfb"
-
       kill $VNC_PID $XVFB_PID || true
       wait $VNC_PID $XVFB_PID 2>/dev/null || true
 
       rm -f "$XAUTH_FILE"
 
       retry_count=$((retry_count + 1))
-    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/home/user/status/lane${LANE_NUM}.json"
+      echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
       if (( retry_count >= MAX_RETRIES )); then
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] Max retries reached on lane $LANE_NUM. Waiting 5 minutes before retrying..."
-        sleep 300  # 5 minutes wait
+        sleep 300  # 5 minutes
         retry_count=0
-    echo "{"status":"error","ip":"$IP","message":"retry $retry_count","last_updated":"$(date '+%Y-%m-%d %H:%M:%S')"}" > "/home/user/status/lane${LANE_NUM}.json"
+        echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Restarting retries for lane $LANE_NUM."
       else
         backoff=$((RETRY_DELAY * retry_count))
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Waiting $backoff seconds before next retry on lane $LANE_NUM"
         sleep $backoff
       fi
-
     } >> "$LOG_FILE" 2>&1
   done
 }

@@ -1,4 +1,0 @@
-[INFO] VAAPI device found. Using hardware acceleration.
-[in#0 @ 0x62a20fde0940] Unknown input format: 'vnc'
-Error opening input file $VNC_IP:0.
-Error opening input files: Invalid argument

@@ -1,0 +1,16 @@
+[Unit]
+Description=VNC to HLS Transcoder
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/user/vnc-to-hls.sh
+WorkingDirectory=/home/user/
+User=user
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
