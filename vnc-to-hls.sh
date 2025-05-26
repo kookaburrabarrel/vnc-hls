@@ -42,7 +42,7 @@ for i in "${!IPS[@]}"; do
     -vaapi_device "$VAAPI_DEVICE" \
     -vf 'format=nv12,hwupload' \
     -c:v h264_vaapi -b:v 1M -maxrate 1M -bufsize 2M -g 30 -sc_threshold 0 \
-    -hls_time 4 -hls_list_size 6 -hls_flags delete_segments+append_list \
+    -hls_time 4 -hls_list_size 12 -hls_flags delete_segments+append_list \
     -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
     "$HLS_PLAYLIST" &
 done
