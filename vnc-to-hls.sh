@@ -9,7 +9,6 @@ IPS=("192.168.4.101" "192.168.4.102" "192.168.4.103" "192.168.4.104")
 DISPLAYS=(":11" ":12" ":13" ":14")
 
 HLS_BASE="/home/user/vnc-hls/hls"
-PLAYLIST_PREFIX="lane"
 LOG_DIR="/home/user/vnc-hls/logs"
 mkdir -p "$LOG_DIR"
 
@@ -21,16 +20,23 @@ ping_check() {
   ping -c 1 -W 1 "$1" &>/dev/null
 }
 
+sanitize_ip() {
+  echo "$1" | tr '.' '_'
+}
+
+timestamp() {
+  date +%s
+}
+
 run_lane() {
   local IP=$1
   local DISPLAY_NUM=$2
   local LANE_NUM=$3
+
   local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
   local STATUS_FILE="/home/user/status/lane${LANE_NUM}.json"
-
   local retry_count=0
 
-  # Initial status write — error, retry 0 (keep for startup)
   echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
   while true; do
@@ -68,10 +74,9 @@ run_lane() {
 
       sleep 5
 
-      HLS_PLAYLIST="$HLS_BASE/${PLAYLIST_PREFIX}${LANE_NUM}.m3u8"
-      HLS_SEGMENT_PATTERN="$HLS_BASE/${PLAYLIST_PREFIX}${LANE_NUM}_%03d.ts"
+      HLS_PLAYLIST="$HLS_BASE/lane${LANE_NUM}.m3u8"
+      HLS_SEGMENT_PATTERN="$HLS_BASE/lane${LANE_NUM}_%s.ts"
 
-      # At this point, streaming is about to start — update JSON to "ok" with retry 0
       retry_count=0
       echo "{\"status\":\"ok\",\"ip\":\"$IP\",\"message\":\"streaming\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
@@ -81,11 +86,12 @@ run_lane() {
         -vaapi_device "$VAAPI_DEVICE" \
         -vf 'format=nv12,hwupload' \
         -c:v h264_vaapi -b:v 1M -maxrate 1M -bufsize 2M -g 30 -sc_threshold 0 \
-        -hls_time 4 -hls_list_size 12 -hls_flags delete_segments+append_list \
-        -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
+        -hls_time 4 \
+        -hls_list_size 43200 \
+        -hls_flags append_list \
+        -hls_segment_filename "$HLS_BASE/lane${LANE_NUM}_$(date +%s).ts" \
         "$HLS_PLAYLIST"
 
-      # If ffmpeg exits, update JSON to error with current retry count
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] ffmpeg exited unexpectedly, killing vncviewer and Xvfb"
       kill $VNC_PID $XVFB_PID || true
       wait $VNC_PID $XVFB_PID 2>/dev/null || true
@@ -97,7 +103,7 @@ run_lane() {
 
       if (( retry_count >= MAX_RETRIES )); then
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] Max retries reached on lane $LANE_NUM. Waiting 5 minutes before retrying..."
-        sleep 300  # 5 minutes
+        sleep 300
         retry_count=0
         echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Restarting retries for lane $LANE_NUM."
@@ -109,7 +115,6 @@ run_lane() {
     } >> "$LOG_FILE" 2>&1
   done
 }
-
 
 # Start all lanes in background
 for i in "${!IPS[@]}"; do

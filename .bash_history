@@ -1,721 +1,3 @@
-      background: #111;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: Arial, sans-serif;
-      gap: 20px;
-    }
-    .video-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    video {
-      width: 240px;
-      height: 400px;
-      background: black;
-      border: 2px solid #444;
-      border-radius: 6px;
-      pointer-events: none;
-    }
-    a.button {
-      margin-top: 8px;
-      padding: 6px 12px;
-      background: #337ab7;
-      color: white;
-      text-decoration: none;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    a.button:hover {
-      background: #286090;
-    }
-  </style>
-</head>
-<body>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_11/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.101&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_12/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.102&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_13/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.103&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-<div class="video-container">
-  <video muted autoplay playsinline src="/hls_display_14/stream.m3u8"></video>
-  <a class="button"
-     href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.104&port=5900&password=wuotu1Iocheegi6u"
-     target="_blank">
-    Interact
-  </a>
-</div>
-
-</body>
-</html>
-EOF
-
-git push
-cat << 'EOF' > ~/start-novnc.sh
-#!/bin/bash
-
-export DISPLAY=:1
-
-# Start virtual framebuffer with 480x800 resolution
-Xvfb :1 -screen 0 480x800x24 &
-
-# Give Xvfb a second to initialize
-sleep 1
-
-# Start VNC server
-x11vnc -display :1 -forever -nopw -shared &
-
-# Start noVNC (adjust path if necessary)
-websockify --web /usr/share/novnc/ 6080 localhost:5900 &
-EOF
-
-chmod +x ~/start-novnc.sh
-~/start-novnc.sh
-git clone https://github.com/novnc/noVNC.git ~/noVNC
-cat << 'EOF' > ~/start-novnc.sh
-#!/bin/bash
-
-export DISPLAY=:1
-
-# Start virtual framebuffer with 480x800 resolution
-Xvfb :1 -screen 0 480x800x24 &
-
-# Give Xvfb a second to initialize
-sleep 1
-
-# Start VNC server
-x11vnc -display :1 -forever -nopw -shared -noxdamage &
-
-# Start noVNC (serves from the ~/noVNC folder)
-websockify --web ~/noVNC 6080 localhost:5900 &
-EOF
-
-~/start-novnc.sh
-ps aux | grep websockify
-sudo lsof -iTCP:6081 -sTCP:LISTEN
-websockify --web /home/user/noVNC 6081 192.168.4.101:5900
-websockify 6081 192.168.4.101:5900 --web /home/user/noVNC
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>T-Bar Gates Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<style>
-</style>
-</head>
-<body>
-<script>
-</script>
-</body>
-</html>
-ls
-cd vnc-hls
-ls
-cat > v3.html << EOF
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>T-Bar Gates Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<style>
-  body {
-    margin: 0;
-    background: #111;
-    color: #eee;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  h1 {
-    margin: 1rem 0;
-  }
-  .dashboard {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 95vw;
-  }
-  .feed {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    background: #222;
-    border-radius: 6px;
-    padding: 0.5rem;
-    box-sizing: border-box;
-  }
-  .feed video {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-    background: black;
-  }
-  .feed label {
-    margin-top: 0.5rem;
-    text-align: center;
-    font-weight: bold;
-  }
-  .feed a.button {
-    margin-top: 0.5rem;
-    text-align: center;
-    display: inline-block;
-    background: #3366cc;
-    color: white;
-    text-decoration: none;
-    padding: 0.3rem 0.7rem;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .feed a.button:hover {
-    background: #224499;
-  }
-  @media (max-width: 600px) {
-    .dashboard {
-      flex-direction: column;
-      width: 100vw;
-    }
-    .feed {
-      margin-bottom: 1rem;
-    }
-  }
-</style>
-</head>
-<body>
-  <h1>T-Bar Gates Dashboard</h1>
-  <div class="dashboard">
-    <div class="feed">
-      <video id="video1" controls autoplay muted></video>
-      <label>192.168.4.101 (Lane 1)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.101&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc101', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.101
-      </a>
-    </div>
-    <div class="feed">
-      <video id="video2" controls autoplay muted></video>
-      <label>192.168.4.102 (Lane 2)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.102&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc102', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.102
-      </a>
-    </div>
-    <div class="feed">
-      <video id="video3" controls autoplay muted></video>
-      <label>192.168.4.103 (Lane 3)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.103&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc103', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.103
-      </a>
-    </div>
-    <div class="feed">
-      <video id="video4" controls autoplay muted></video>
-      <label>192.168.4.104 (Lane 4)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.104&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc104', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.104
-      </a>
-    </div>
-  </div>
-
-<script>
-  const streams = [
-    '/hls/lane1.m3u8',
-    '/hls/lane2.m3u8',
-    '/hls/lane3.m3u8',
-    '/hls/lane4.m3u8',
-  ];
-
-  function setupHls(videoId, streamUrl) {
-    const video = document.getElementById(videoId);
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play();
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-      video.addEventListener('loadedmetadata', () => {
-        video.play();
-      });
-    } else {
-      console.warn('HLS not supported for', streamUrl);
-    }
-  }
-
-  streams.forEach((url, i) => {
-    setupHls('video' + (i + 1), url);
-  });
-</script>
-</body>
-</html>
-
-EOF
-
-ls
-cat > v4.html << EOF
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>T-Bar Gates Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<style>
-  body {
-    margin: 0;
-    background: #111;
-    color: #eee;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  h1 {
-    margin: 1rem 0;
-  }
-  .dashboard {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 95vw;
-  }
-  .feed {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    background: #222;
-    border-radius: 6px;
-    padding: 0.5rem;
-    box-sizing: border-box;
-  }
-  .feed video {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-    background: black;
-  }
-  .feed label {
-    margin-top: 0.5rem;
-    text-align: center;
-    font-weight: bold;
-  }
-  .feed a.button {
-    margin-top: 0.5rem;
-    text-align: center;
-    display: inline-block;
-    background: #3366cc;
-    color: white;
-    text-decoration: none;
-    padding: 0.3rem 0.7rem;
-    border-radius: 4px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .feed a.button:hover {
-    background: #224499;
-  }
-  @media (max-width: 600px) {
-    .dashboard {
-      flex-direction: column;
-      width: 100vw;
-    }
-    .feed {
-      margin-bottom: 1rem;
-    }
-  }
-</style>
-</head>
-<body>
-  <h1>T-Bar Gates Dashboard</h1>
-  <div class="dashboard">
-    <div class="feed">
-      <video id="video1" controls autoplay muted></video>
-      <label>192.168.4.101 (Lane 1)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.101&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc101', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.101
-      </a>
-    </div>
-    <div class="feed">
-      <video id="video2" controls autoplay muted></video>
-      <label>192.168.4.102 (Lane 2)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.102&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc102', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.102
-      </a>
-    </div>
-    <div class="feed">
-      <video id="video3" controls autoplay muted></video>
-      <label>192.168.4.103 (Lane 3)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.103&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc103', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.103
-      </a>
-    </div>
-    <div class="feed">
-      <video id="video4" controls autoplay muted></video>
-      <label>192.168.4.104 (Lane 4)</label>
-      <a class="button" href="http://192.168.253.37:6081/vnc.html?autoconnect=true&resize=scale&host=192.168.4.104&port=5900&password=wuotu1Iocheegi6u"
-         onclick="window.open(this.href, 'vnc104', 'width=480,height=800,resizable=yes'); return false;">
-         Open VNC for 192.168.4.104
-      </a>
-    </div>
-  </div>
-
-<script>
-  const streams = [
-    '/hls/lane1.m3u8',
-    '/hls/lane2.m3u8',
-    '/hls/lane3.m3u8',
-    '/hls/lane4.m3u8',
-  ];
-
-  function setupHls(videoId, streamUrl) {
-    const video = document.getElementById(videoId);
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play();
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-      video.addEventListener('loadedmetadata', () => {
-        video.play();
-      });
-    } else {
-      console.warn('HLS not supported for', streamUrl);
-    }
-  }
-
-  streams.forEach((url, i) => {
-    setupHls('video' + (i + 1), url);
-  });
-</script>
-</body>
-</html>
-
-EOF
-
-cd ..
-ls
-cd ..
-ls
-cd ..
-ls
-rm index.html
-ls -l /home/user/vnc-hls/hls/
-cat /home/user/vnc-hls/hls/lane1.m3u8
-cat <<'EOF'
-# Add this inside your nginx `server` block:
-location ~ \.(m3u8|ts)$ {
-    add_header Cache-Control no-cache;
-    add_header Pragma no-cache;
-    add_header Expires 0;
-}
-EOF
-
-sudo nginx -s reload
-cat <<'EOF'
-# In your ffmpeg command, change -hls_list_size to 12 or more:
--hls_list_size 12
-EOF
-
-watch -n 1 cat /home/user/vnc-hls/hls/lane1.m3u8
-cat <<'EOF'
-# In your ffmpeg command, change -hls_list_size to 12 or more:
--hls_list_size 12
-EOF
-
-sed -i 's/-hls_list_size [0-9]\+/-hls_list_size 12/g' ~/vnc-to-hls.sh
-sudo nginx -s reload
-ls
-cd vnc-hls
-ls
-cd hs
-cd hls
-ls
-cd ..
-ls
-cd ..
-ls
-cd vnc-hls
-ls
-cd nginx-dashboard
-cd nginx-dashaord
-cd nginx-dashboard
-cd nginx_dashbaord
-cd nginx_dashboard
-ls
-ps aux | grep nginx
-nginx -T 2>/dev/null | head -n 20
-nginx -V 2>&1 | grep -- '--conf-path'
-ps aux | grep nginx
-cdls
-cd
-cd ..
-ls
-cd ..
-ls
-cd usr/sbin
-cd nginx
-ls
-cd nginx
-ps aux | grep nginx
-nginx -T 2>/dev/null | head -n 20
-nginx -V 2>&1 | grep -- '--conf-path'
-grep include /etc/nginx/nginx.conf
-ls /etc/nginx/sites-enabled/
-sudo tee -a /etc/nginx/sites-enabled/vnc-hls > /dev/null <<'EOF'
-
-# HLS: disable caching and enable CORS for .m3u8 and .ts files
-location ~ \.(m3u8|ts)$ {
-    add_header Cache-Control "no-cache";
-    add_header Pragma "no-cache";
-    add_header Expires 0;
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Headers *;
-    add_header Access-Control-Expose-Headers *;
-    types {
-        application/vnd.apple.mpegurl m3u8;
-        video/mp2t ts;
-    }
-}
-EOF
-
-sudo nginx -s reload
-cd /home/user/vnc-hls/hls
-python3 -m http.server 8080
-cat > /home/user/vnc-hls/hls/index.html <<'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>HLS Stream Test</title>
-</head>
-<body>
-  <h2>Lane 1</h2>
-  <video id="video1" width="480" height="320" controls></video>
-  <h2>Lane 2</h2>
-  <video id="video2" width="480" height="320" controls></video>
-  <h2>Lane 3</h2>
-  <video id="video3" width="480" height="320" controls></video>
-  <h2>Lane 4</h2>
-  <video id="video4" width="480" height="320" controls></video>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-  <script>
-    function loadStream(videoId, m3u8) {
-      var video = document.getElementById(videoId);
-      if (Hls.isSupported()) {
-        var hls = new Hls();
-        hls.loadSource(m3u8);
-        hls.attachMedia(video);
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = m3u8;
-      }
-    }
-    loadStream('video1', 'lane1.m3u8');
-    loadStream('video2', 'lane2.m3u8');
-    loadStream('video3', 'lane3.m3u8');
-    loadStream('video4', 'lane4.m3u8');
-  </script>
-</body>
-</html>
-EOF
-
-cat /home/user/vnc-hls/hls/lane2.m3u8
-ls -l /home/user/vnc-hls/hls/lane2*
-# Also:
-ls -l /home/user/vnc-hls/hls/
-cat lane1.m3u8
-cat lane2.m3u8
-cat lane3.m3u8
-cat lane4.m3u8
-cat lane1.m3u8
-cat lane2.m3u8
-sudo tail -f /var/log/nginx/access.log /var/log/nginx/error.log
-cd ..
-ls
-cd ..
-ls
-cd etc
-cd nginx
-ls
-cd sites-enabled/vnc-hls
-cd sites-enabled
-ls
-cd vnc-hls
-ls
-cat /etc/nginx/sites-enabled/vnc-hls
-cat > /etc/nginx/sites-enabled/vnc-hls <<'EOF'
-server {
-    listen 80 default_server;
-    server_name _;
-
-    root /home/user/vnc-hls;
-
-    location / {
-        autoindex on;
-        autoindex_exact_size off;
-        autoindex_localtime on;
-        try_files $uri $uri/ =404;
-    }
-
-    location /hls/ {
-        alias /home/user/vnc-hls/hls/;
-        add_header Cache-Control "no-cache";
-        add_header Pragma "no-cache";
-        add_header Expires 0;
-        add_header Access-Control-Allow-Origin *;
-        add_header Access-Control-Allow-Headers *;
-        add_header Access-Control-Expose-Headers *;
-        types {
-            application/vnd.apple.mpegurl m3u8;
-            video/mp2t ts;
-        }
-    }
-}
-EOF
-
-sudo nginx -s reload
-cat /etc/nginx/sites-enabled/vnc-hls
-sdf
-cat /etc/nginx/sites-enabled/vnc-hls
-sudo tee /etc/nginx/sites-enabled/vnc-hls > /dev/null <<'EOF'
-server {
-    listen 80 default_server;
-    server_name _;
-
-    root /home/user/vnc-hls;
-
-    location / {
-        autoindex on;
-        autoindex_exact_size off;
-        autoindex_localtime on;
-        try_files $uri $uri/ =404;
-    }
-
-    location /hls/ {
-        alias /home/user/vnc-hls/hls/;
-        add_header Cache-Control "no-cache";
-        add_header Pragma "no-cache";
-        add_header Expires 0;
-        add_header Access-Control-Allow-Origin *;
-        add_header Access-Control-Allow-Headers *;
-        add_header Access-Control-Expose-Headers *;
-        types {
-            application/vnd.apple.mpegurl m3u8;
-            video/mp2t ts;
-        }
-    }
-}
-EOF
-
-sudo nginx -s reload
-cat /home/user/vnc-hls/hls/lane1.m3u8
-cd home
-cdcd home
-cd ..
-s
-ls
-cd ..
-cd ome
-cd home
-cd usr
-cd user
-cd vnc-hls
-ls
-cat /home/user/vnc-hls/hls/lane1.m3u8
-ls -lhtr /home/user/vnc-hls/hls/
-ps aux | grep ffmpeg
-df -h
-cd ..
-nano vnc-to-hls.sj
-nano vnc-to-hls.sh
-cat vnc-to-hls.sh
-pkill ffmpeg
-pkill vncviewer
-pkill Xvfb
-rm -f /home/user/vnc-hls/hls/lane*.ts /home/user/vnc-hls/hls/lane*.m3u8
-./vnc-to-hls.sh
-ls
-./vnc-to-hls.sh
-echo "127.0.0.1 dashboard" | sudo tee -a /etc/hosts
-sudo tee /etc/nginx/sites-enabled/vnc-hls > /dev/null <<'EOF'
-server {
-    listen 80;
-    server_name dashboard;
-
-    root /home/user/vnc-hls;
-
-    location / {
-        autoindex on;
-        autoindex_exact_size off;
-        autoindex_localtime on;
-        try_files \$uri \$uri/ =404;
-    }
-
-    location /hls/ {
-        alias /home/user/vnc-hls/hls/;
-        add_header Cache-Control "no-cache";
-        add_header Pragma "no-cache";
-        add_header Expires 0;
-        add_header Access-Control-Allow-Origin *;
-        add_header Access-Control-Allow-Headers *;
-        add_header Access-Control-Expose-Headers *;
-        types {
-            application/vnd.apple.mpegurl m3u8;
-            video/mp2t ts;
-        }
-    }
-}
-EOF
-
-sudo nginx -s reload
-ping 192.168.1.10
-ping 192.168.1.11
-ip a
-sudo cp /etc/netplan/01-netcfg.yaml /etc/netplan/01-netcfg.yaml.bak 2>/dev/null
-sudo tee /etc/netplan/01-netcfg.yaml > /dev/null <<'EOF'
-network:
-  version: 2
-  renderer: networkd
   ethernets:
     enp1s0:
       dhcp4: no
@@ -1997,4 +1279,722 @@ wait
 EOF
 
 ls
+sudo reboot
+ls
+./vnc-to-hls.sh
+chmod +x vnc-to-hls.sh
+./vnc-to-hls.sh
+git add .
+git commit
+git commit -m new
+git push
+git pull
+sudo reboot
+./vnc-to-hls.sh
+git diff
+ls
+cd vnc-hls
+s
+ls
+rm hls_display_11
+rm -r hls_display_11
+rm -r hls_display_12
+rm -r hls_display_13
+rm -r hls_display_14
+rm -r templates
+rm -r ngninx_dashboard
+rm -r nginx_dashboard
+ls
+mv index.html index2.html
+nano index.html
+ls
+rm index.html
+ls
+nano index.html
+nano archive.py
+chmod +x archive.py
+./archive.py
+python3 archive.py
+mkdir archive
+ls
+rm archive.py
+nano archive.py
+chmod +x archive.py
+python archive.py
+python3 archive.py
+ls
+cd vnc-hls
+ls
+mv archive.py ../
+ls
+cd ..
+ls
+cd vnc-hls
+cd hls
+ls
+cd ..
+ls
+rm archive.py
+nano archive.py
+python3 archive.py
+cat > archive.py << 'EOF'
+from flask import Flask, send_file, jsonify
+import os
+from datetime import datetime, timezone
+import subprocess
+import time
+
+app = Flask(__name__)
+ARCHIVE_DIR = "/home/user/vnc-hls/archive"  # clips stored here
+
+# List available clips for a lane, returning timestamps like "20250527-142000"
+@app.route('/archive/<lane>/available')
+def available_times(lane):
+    lane_path = os.path.join(ARCHIVE_DIR, lane)
+    if not os.path.isdir(lane_path):
+        return jsonify([])
+
+    segments = sorted([
+        f.replace('.mp4', '') for f in os.listdir(lane_path)
+        if f.endswith('.mp4')
+    ])
+    return jsonify(segments)
+
+# Serve a clip file by lane and timestamp
+@app.route('/archive/<lane>/<timestamp>')
+def get_clip(lane, timestamp):
+    clip_path = os.path.join(ARCHIVE_DIR, lane, f"{timestamp}.mp4")
+    if not os.path.isfile(clip_path):
+        return "Not Found", 404
+    return send_file(clip_path, as_attachment=True)
+
+def cleanup_old_clips():
+    """Delete clips older than 48 hours"""
+    cutoff = time.time() - (48 * 3600)
+    for lane in os.listdir(ARCHIVE_DIR):
+        lane_path = os.path.join(ARCHIVE_DIR, lane)
+        if not os.path.isdir(lane_path):
+            continue
+        for f in os.listdir(lane_path):
+            if f.endswith('.mp4'):
+                full_path = os.path.join(lane_path, f)
+                if os.path.getmtime(full_path) < cutoff:
+                    os.remove(full_path)
+                    print(f"Deleted old clip: {full_path}")
+
+def create_clip(lane, segment_files):
+    """Merge .ts segment files into one mp4 clip with timestamp-based filename"""
+    timestamp_str = datetime.utcnow().strftime('%Y%m%d-%H%M%S')
+    output_dir = os.path.join(ARCHIVE_DIR, lane)
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f"{timestamp_str}.mp4")
+
+    if not segment_files:
+        print(f"No TS files for {lane}")
+        return
+
+    # Build input concat list for ffmpeg
+    concat_file_path = os.path.join(output_dir, f"concat_{timestamp_str}.txt")
+    with open(concat_file_path, 'w') as f:
+        for ts_file in segment_files:
+            # full path needed
+            full_ts_path = os.path.abspath(ts_file)
+            f.write(f"file '{full_ts_path}'\n")
+
+    # Run ffmpeg concat to create mp4
+    cmd = [
+        "ffmpeg",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", concat_file_path,
+        "-c", "copy",
+        output_path,
+        "-y"
+    ]
+    print(f"Creating clip: {output_path}")
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.remove(concat_file_path)
+
+def archive_loop():
+    """Background loop: every 5 minutes, create clips from TS files, cleanup old clips"""
+    lanes = ['lane1', 'lane2', 'lane3', 'lane4']
+    base_ts_dir = "/home/user/vnc-hls/hls"
+
+    while True:
+        for lane in lanes:
+            # Find all .ts files for lane, sorted by filename (assumes TS files are named with increasing number)
+            ts_files = sorted(
+                [os.path.join(base_ts_dir, f) for f in os.listdir(base_ts_dir)
+                 if f.startswith(lane) and f.endswith('.ts')]
+            )
+
+            create_clip(lane, ts_files)
+
+        cleanup_old_clips()
+        time.sleep(300)  # wait 5 minutes
+
+if __name__ == '__main__':
+    import threading
+    # Start background archiving thread
+    threading.Thread(target=archive_loop, daemon=True).start()
+
+    # Run Flask app
+    app.run(host='0.0.0.0', port=5000)
+EOF
+
+python3 archive.py
+cat > /home/user/archive.py << 'EOF'
+import os
+import subprocess
+import time
+from datetime import datetime, timezone
+from flask import Flask, send_file, jsonify
+
+app = Flask(__name__)
+
+ARCHIVE_DIR = "/home/user/vnc-hls/archive"
+HLS_DIR = "/home/user/vnc-hls/hls"
+LANES = ["lane1", "lane2", "lane3", "lane4"]
+CLIP_DURATION_SECONDS = 300  # 5 minutes
+RETENTION_SECONDS = 48 * 3600  # 48 hours
+
+def create_clip(lane, segment_files):
+    timestamp_str = datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+    output_dir = os.path.join(ARCHIVE_DIR, lane)
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, f"{timestamp_str}.mp4")
+
+    # Create concat file for ffmpeg
+    concat_file = f"/tmp/{lane}_concat.txt"
+    with open(concat_file, "w") as f:
+        for segment in segment_files:
+            f.write(f"file '{os.path.join(HLS_DIR, segment)}'\n")
+
+    # ffmpeg command to concatenate and convert .ts files into one mp4 clip
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-f", "concat",
+        "-safe", "0",
+        "-i", concat_file,
+        "-c", "copy",
+        output_path
+    ]
+
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.remove(concat_file)
+    print(f"Creating clip: {output_path}")
+
+def cleanup_old_clips():
+    cutoff = time.time() - RETENTION_SECONDS
+    for lane in LANES:
+        lane_path = os.path.join(ARCHIVE_DIR, lane)
+        if not os.path.isdir(lane_path):
+            continue
+        for filename in os.listdir(lane_path):
+            if filename.endswith(".mp4"):
+                filepath = os.path.join(lane_path, filename)
+                if os.path.getmtime(filepath) < cutoff:
+                    os.remove(filepath)
+                    print(f"Deleted old clip: {filepath}")
+
+def archive_loop():
+    while True:
+        for lane in LANES:
+            ts_files = sorted([f for f in os.listdir(HLS_DIR) if f.startswith(lane) and f.endswith(".ts")])
+            if not ts_files:
+                print(f"No TS files for {lane}")
+                continue
+
+            # Select last N segments to cover ~5 minutes (assuming ~10s per segment)
+            segment_count = CLIP_DURATION_SECONDS // 10
+            segments_to_use = ts_files[-segment_count:]
+
+            create_clip(lane, segments_to_use)
+        cleanup_old_clips()
+        time.sleep(CLIP_DURATION_SECONDS)
+
+@app.route('/archive/<lane>/available')
+def available_times(lane):
+    lane_path = os.path.join(ARCHIVE_DIR, lane)
+    if not os.path.isdir(lane_path):
+        return jsonify([])
+
+    clips = sorted([
+        f.replace('.mp4', '') for f in os.listdir(lane_path)
+        if f.endswith('.mp4')
+    ])
+    return jsonify(clips)
+
+@app.route('/archive/<lane>/<timestamp>')
+def get_clip(lane, timestamp):
+    clip_path = os.path.join(ARCHIVE_DIR, lane, f"{timestamp}.mp4")
+    if not os.path.isfile(clip_path):
+        return "Not Found", 404
+    return send_file(clip_path, as_attachment=True)
+
+if __name__ == '__main__':
+    import threading
+    threading.Thread(target=archive_loop, daemon=True).start()
+    app.run(host='0.0.0.0', port=5000)
+EOF
+
+python3 archive.py
+cat > ~/vnc-hls/dev-scripts/archive_30min_blocks.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import time
+from datetime import datetime, timedelta
+import subprocess
+from pathlib import Path
+
+HLS_DIR = '/home/user/vnc-hls/hls'
+ARCHIVE_DIR = '/home/user/vnc-hls/archive'
+LANES = ['lane1', 'lane2', 'lane3', 'lane4']
+
+def aligned_wait():
+    now = datetime.now()
+    minute = now.minute
+    if minute < 30:
+        next_run = now.replace(minute=30, second=0, microsecond=0)
+    else:
+        next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    wait_time = (next_run - now).total_seconds()
+    print(f"[{now}] Sleeping for {wait_time:.1f} seconds until {next_run}")
+    time.sleep(wait_time)
+
+def find_ts_files(lane, start_ts, end_ts):
+    ts_files = []
+    for fname in sorted(os.listdir(HLS_DIR)):
+        if fname.startswith(lane + '_') and fname.endswith('.ts'):
+            full_path = os.path.join(HLS_DIR, fname)
+            ctime = os.path.getctime(full_path)
+            if start_ts <= ctime < end_ts:
+                ts_files.append(full_path)
+    return ts_files
+
+def archive_lane(lane, start_time):
+    end_time = start_time + timedelta(minutes=30)
+    start_ts = start_time.timestamp()
+    end_ts = end_time.timestamp()
+
+    ts_files = find_ts_files(lane, start_ts, end_ts)
+    if not ts_files:
+        print(f"[{datetime.now()}] No TS files found for {lane} between {start_time} and {end_time}")
+        return
+
+    list_path = f'/tmp/{lane}_inputs.txt'
+    with open(list_path, 'w') as f:
+        for ts in ts_files:
+            f.write(f"file '{ts}'\n")
+
+    timestamp_label = start_time.strftime('%Y-%m-%d_%H-%M')
+    output_path = os.path.join(ARCHIVE_DIR, f'{lane}_{timestamp_label}.mp4')
+
+    print(f"[{datetime.now()}] Archiving {lane} to {output_path} with {len(ts_files)} segments...")
+    cmd = [
+        'ffmpeg',
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', list_path,
+        '-c', 'copy',
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main_loop():
+    while True:
+        now = datetime.now()
+        # Align to last :00 or :30
+        minute = 0 if now.minute < 30 else 30
+        aligned_start = now.replace(minute=minute, second=0, microsecond=0) - timedelta(minutes=30)
+
+        for lane in LANES:
+            archive_lane(lane, aligned_start)
+
+        aligned_wait()
+
+if __name__ == '__main__':
+    main_loop()
+EOF
+
+chmod +x ~/vnc-hls/dev-scripts/archive_30min_blocks.py
+python3 archive_30min_blocks.py
+python3 /dev-scripts/archive_30min_blocks.py
+cd dev-scripts
+cat > ~/vnc-hls/archive_30min_blocks.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import time
+from datetime import datetime, timedelta
+import subprocess
+from pathlib import Path
+
+HLS_DIR = '/home/user/vnc-hls/hls'
+ARCHIVE_DIR = '/home/user/vnc-hls/archive'
+LANES = ['lane1', 'lane2', 'lane3', 'lane4']
+
+def aligned_wait():
+    now = datetime.now()
+    minute = now.minute
+    if minute < 30:
+        next_run = now.replace(minute=30, second=0, microsecond=0)
+    else:
+        next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    wait_time = (next_run - now).total_seconds()
+    print(f"[{now}] Sleeping for {wait_time:.1f} seconds until {next_run}")
+    time.sleep(wait_time)
+
+def find_ts_files(lane, start_ts, end_ts):
+    ts_files = []
+    for fname in sorted(os.listdir(HLS_DIR)):
+        if fname.startswith(lane + '_') and fname.endswith('.ts'):
+            full_path = os.path.join(HLS_DIR, fname)
+            ctime = os.path.getctime(full_path)
+            if start_ts <= ctime < end_ts:
+                ts_files.append(full_path)
+    return ts_files
+
+def archive_lane(lane, start_time):
+    end_time = start_time + timedelta(minutes=30)
+    start_ts = start_time.timestamp()
+    end_ts = end_time.timestamp()
+
+    ts_files = find_ts_files(lane, start_ts, end_ts)
+    if not ts_files:
+        print(f"[{datetime.now()}] No TS files found for {lane} between {start_time} and {end_time}")
+        return
+
+    list_path = f'/tmp/{lane}_inputs.txt'
+    with open(list_path, 'w') as f:
+        for ts in ts_files:
+            f.write(f"file '{ts}'\n")
+
+    timestamp_label = start_time.strftime('%Y-%m-%d_%H-%M')
+    output_path = os.path.join(ARCHIVE_DIR, f'{lane}_{timestamp_label}.mp4')
+
+    print(f"[{datetime.now()}] Archiving {lane} to {output_path} with {len(ts_files)} segments...")
+    cmd = [
+        'ffmpeg',
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', list_path,
+        '-c', 'copy',
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main_loop():
+    while True:
+        now = datetime.now()
+        # Align to last :00 or :30
+        minute = 0 if now.minute < 30 else 30
+        aligned_start = now.replace(minute=minute, second=0, microsecond=0) - timedelta(minutes=30)
+
+        for lane in LANES:
+            archive_lane(lane, aligned_start)
+
+        aligned_wait()
+
+if __name__ == '__main__':
+    main_loop()
+EOF
+
+chmod +x ~/vnc-hls/dev-scripts/archive_30min_blocks.py
+python3 /dev-scripts/archive_30min_blocks.py
+ls
+cat > ~/vnc-hls/archive_30min_blocks.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import time
+from datetime import datetime, timedelta
+import subprocess
+from pathlib import Path
+
+HLS_DIR = '/home/user/vnc-hls/hls'
+ARCHIVE_DIR = '/home/user/vnc-hls/archive'
+LANES = ['lane1', 'lane2', 'lane3', 'lane4']
+
+def aligned_wait():
+    now = datetime.now()
+    minute = now.minute
+    if minute < 30:
+        next_run = now.replace(minute=30, second=0, microsecond=0)
+    else:
+        next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    wait_time = (next_run - now).total_seconds()
+    print(f"[{now}] Sleeping for {wait_time:.1f} seconds until {next_run}")
+    time.sleep(wait_time)
+
+def find_ts_files(lane, start_ts, end_ts):
+    ts_files = []
+    for fname in sorted(os.listdir(HLS_DIR)):
+        if fname.startswith(lane + '_') and fname.endswith('.ts'):
+            full_path = os.path.join(HLS_DIR, fname)
+            ctime = os.path.getctime(full_path)
+            if start_ts <= ctime < end_ts:
+                ts_files.append(full_path)
+    return ts_files
+
+def archive_lane(lane, start_time):
+    end_time = start_time + timedelta(minutes=30)
+    start_ts = start_time.timestamp()
+    end_ts = end_time.timestamp()
+
+    ts_files = find_ts_files(lane, start_ts, end_ts)
+    if not ts_files:
+        print(f"[{datetime.now()}] No TS files found for {lane} between {start_time} and {end_time}")
+        return
+
+    list_path = f'/tmp/{lane}_inputs.txt'
+    with open(list_path, 'w') as f:
+        for ts in ts_files:
+            f.write(f"file '{ts}'\n")
+
+    timestamp_label = start_time.strftime('%Y-%m-%d_%H-%M')
+    output_path = os.path.join(ARCHIVE_DIR, f'{lane}_{timestamp_label}.mp4')
+
+    print(f"[{datetime.now()}] Archiving {lane} to {output_path} with {len(ts_files)} segments...")
+    cmd = [
+        'ffmpeg',
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', list_path,
+        '-c', 'copy',
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main_loop():
+    while True:
+        now = datetime.now()
+        # Align to last :00 or :30
+        minute = 0 if now.minute < 30 else 30
+        aligned_start = now.replace(minute=minute, second=0, microsecond=0) - timedelta(minutes=30)
+
+        for lane in LANES:
+            archive_lane(lane, aligned_start)
+
+        aligned_wait()
+
+if __name__ == '__main__':
+    main_loop()
+EOF
+
+chmod +x ~/vnc-hls/dev-scripts/archive_30min_blocks.py
+cat > ~/vnc-hls/archive_30min_blocks.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import time
+from datetime import datetime, timedelta
+import subprocess
+from pathlib import Path
+
+HLS_DIR = '/home/user/vnc-hls/hls'
+ARCHIVE_DIR = '/home/user/vnc-hls/archive'
+LANES = ['lane1', 'lane2', 'lane3', 'lane4']
+
+def aligned_wait():
+    now = datetime.now()
+    minute = now.minute
+    if minute < 30:
+        next_run = now.replace(minute=30, second=0, microsecond=0)
+    else:
+        next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    wait_time = (next_run - now).total_seconds()
+    print(f"[{now}] Sleeping for {wait_time:.1f} seconds until {next_run}")
+    time.sleep(wait_time)
+
+def find_ts_files(lane, start_ts, end_ts):
+    ts_files = []
+    for fname in sorted(os.listdir(HLS_DIR)):
+        if fname.startswith(lane + '_') and fname.endswith('.ts'):
+            full_path = os.path.join(HLS_DIR, fname)
+            ctime = os.path.getctime(full_path)
+            if start_ts <= ctime < end_ts:
+                ts_files.append(full_path)
+    return ts_files
+
+def archive_lane(lane, start_time):
+    end_time = start_time + timedelta(minutes=30)
+    start_ts = start_time.timestamp()
+    end_ts = end_time.timestamp()
+
+    ts_files = find_ts_files(lane, start_ts, end_ts)
+    if not ts_files:
+        print(f"[{datetime.now()}] No TS files found for {lane} between {start_time} and {end_time}")
+        return
+
+    list_path = f'/tmp/{lane}_inputs.txt'
+    with open(list_path, 'w') as f:
+        for ts in ts_files:
+            f.write(f"file '{ts}'\n")
+
+    timestamp_label = start_time.strftime('%Y-%m-%d_%H-%M')
+    output_path = os.path.join(ARCHIVE_DIR, f'{lane}_{timestamp_label}.mp4')
+
+    print(f"[{datetime.now()}] Archiving {lane} to {output_path} with {len(ts_files)} segments...")
+    cmd = [
+        'ffmpeg',
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', list_path,
+        '-c', 'copy',
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main_loop():
+    while True:
+        now = datetime.now()
+        # Align to last :00 or :30
+        minute = 0 if now.minute < 30 else 30
+        aligned_start = now.replace(minute=minute, second=0, microsecond=0) - timedelta(minutes=30)
+
+        for lane in LANES:
+            archive_lane(lane, aligned_start)
+
+        aligned_wait()
+
+if __name__ == '__main__':
+    main_loop()
+EOF
+
+chmod +x ~/vnc-hls/archive_30min_blocks.py
+chmod +x ~/vnc-hls/dev-scripts/archive_30min_blocks.py
+python3 archive_30min_blocks.py
+ls
+cat > archive_30min_blocks.py << 'EOF'
+#!/usr/bin/env python3
+import os
+import time
+from datetime import datetime, timedelta
+import subprocess
+from pathlib import Path
+
+HLS_DIR = '/home/user/vnc-hls/hls'
+ARCHIVE_DIR = '/home/user/vnc-hls/archive'
+LANES = ['lane1', 'lane2', 'lane3', 'lane4']
+
+def aligned_wait():
+    now = datetime.now()
+    minute = now.minute
+    if minute < 30:
+        next_run = now.replace(minute=30, second=0, microsecond=0)
+    else:
+        next_run = (now + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0)
+    wait_time = (next_run - now).total_seconds()
+    print(f"[{now}] Sleeping for {wait_time:.1f} seconds until {next_run}")
+    time.sleep(wait_time)
+
+def find_ts_files(lane, start_ts, end_ts):
+    ts_files = []
+    for fname in sorted(os.listdir(HLS_DIR)):
+        if fname.startswith(lane + '_') and fname.endswith('.ts'):
+            full_path = os.path.join(HLS_DIR, fname)
+            ctime = os.path.getctime(full_path)
+            if start_ts <= ctime < end_ts:
+                ts_files.append(full_path)
+    return ts_files
+
+def archive_lane(lane, start_time):
+    end_time = start_time + timedelta(minutes=30)
+    start_ts = start_time.timestamp()
+    end_ts = end_time.timestamp()
+
+    ts_files = find_ts_files(lane, start_ts, end_ts)
+    if not ts_files:
+        print(f"[{datetime.now()}] No TS files found for {lane} between {start_time} and {end_time}")
+        return
+
+    list_path = f'/tmp/{lane}_inputs.txt'
+    with open(list_path, 'w') as f:
+        for ts in ts_files:
+            f.write(f"file '{ts}'\n")
+
+    timestamp_label = start_time.strftime('%Y-%m-%d_%H-%M')
+    output_path = os.path.join(ARCHIVE_DIR, f'{lane}_{timestamp_label}.mp4')
+
+    print(f"[{datetime.now()}] Archiving {lane} to {output_path} with {len(ts_files)} segments...")
+    cmd = [
+        'ffmpeg',
+        '-y',
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', list_path,
+        '-c', 'copy',
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def main_loop():
+    while True:
+        now = datetime.now()
+        # Align to last :00 or :30
+        minute = 0 if now.minute < 30 else 30
+        aligned_start = now.replace(minute=minute, second=0, microsecond=0) - timedelta(minutes=30)
+
+        for lane in LANES:
+            archive_lane(lane, aligned_start)
+
+        aligned_wait()
+
+if __name__ == '__main__':
+    main_loop()
+EOF
+
+chmod +x ~/vnc-hls/archive_30min_blocks.py
+ls
+chmod +x ~/vnc-hls/archive_30min_blocks.py
+chmod +x archive_30min_blocks.py
+./archive_30min_blocks.py
+python3 archive_30min_blocks.py
+ls
+cd hls
+cd vnc-hls
+cd hls
+ls
+cd ..
+ls
+mv vnc-to-hls.sh vnc-to-hls.old3
+nano vnc-to-hls.sh
+chmod +x vnc-to-hls.sh
+./vnc-to-hls.sh
+sudo reboot
+ls
+cd status
+ls
+cd ..
+ls
+cd vnc-hls
+ls
+nano index3.html
+ls
+cd hls
+ls
+cd ..
+ls
+cat vnc-to-hls.sh
+cd ..
+cat vnc-to-hls.sh
+rm vnc-to-hls.sh
+nano vnc-to-hls.sh
+chmod +x vnc-to-hls.sh
+./ vnc-to-hls.sh
+./vnc-to-hls.sh
+sudo reboot
+ls
+cd vnc-hls
+ls
+mv index.html index5.html
+mv index3.html index.html
+cd ..
+ls
+mv vnc-to-hls.sh vnc-to-hls.old4
+ls
+nano vnc-to-hls.sh
 sudo reboot
