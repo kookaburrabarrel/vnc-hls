@@ -1,1 +1,3 @@
 *.ts
+hls/*.ts
+vnc-hls/hls/*.ts
