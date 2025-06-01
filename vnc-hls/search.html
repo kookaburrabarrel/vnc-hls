@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VNC Archive Downloader</title>
+  <style>
+    /* Dark theme styles */
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 1em auto;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    label {
+      display: block;
+      margin-top: 1em;
+      color: #bbbbbb;
+    }
+    select, input[type="datetime-local"] {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      border: 1px solid #444;
+      padding: 0.3em 0.5em;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    select:focus, input[type="datetime-local"]:focus {
+      border-color: #66afe9;
+      outline: none;
+      box-shadow: 0 0 5px #66afe9;
+    }
+    button {
+      margin-top: 1em;
+      background-color: #333;
+      color: #e0e0e0;
+      border: 1px solid #555;
+      padding: 0.5em 1em;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.2s ease;
+      display: inline-block;
+    }
+    button:hover:not(:disabled) {
+      background-color: #555;
+      border-color: #888;
+    }
+    button:disabled {
+      background-color: #2a2a2a;
+      color: #777;
+      cursor: not-allowed;
+    }
+    #clipsList {
+      margin-top: 1em;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #444;
+      padding: 0.5em;
+      background-color: #1e1e1e;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .clipItem {
+      margin-bottom: 0.25em;
+      color: #ccc;
+    }
+    #status {
+      margin-top: 1em;
+      color: #4caf50; /* green */
+    }
+    #error {
+      margin-top: 1em;
+      color: #f44336; /* red */
+    }
+    .centered-button {
+      display: block;
+      margin: 2em auto 1em auto;
+      padding: 0.5em 1.5em;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #333;
+      border: 1px solid #555;
+      border-radius: 5px;
+      color: #e0e0e0;
+      transition: background-color 0.2s ease;
+      max-width: 200px;
+      text-align: center;
+    }
+    .centered-button:hover {
+      background-color: #555;
+      border-color: #888;
+    }
+    h1 {
+      text-align: center;
+      color: #ddd;
+      margin-bottom: 1em;
+    }
+  </style>
+</head>
+<body>
+
+<h1>VNC Archive Downloader</h1>
+
+<label for="laneSelect">Select Lane:</label>
+<select id="laneSelect">
+  <option value="lane1">Lane 1</option>
+  <option value="lane2">Lane 2</option>
+  <option value="lane3">Lane 3</option>
+  <option value="lane4">Lane 4</option>
+</select>
+
+<label for="startTime">Start Time (UTC):</label>
+<input type="datetime-local" id="startTime" />
+
+<label for="endTime">End Time (UTC):</label>
+<input type="datetime-local" id="endTime" />
+
+<button id="fetchClipsBtn">Fetch Clips</button>
+
+<div id="clipsList"></div>
+
+<button id="downloadAllBtn" disabled>Download All Clips</button>
+
+<div id="status"></div>
+<div id="error"></div>
+
+<button id="returnDashboardBtn" class="centered-button">Return to Dashboard</button>
+
+<script>
+let SERVER_URL = 'http://localhost:5001';  // default port 5001
+
+async function loadConfig() {
+  try {
+    const res = await fetch('config.json');
+    if (!res.ok) throw new Error('Could not load config.json');
+    const config = await res.json();
+    if (config.status_url) {
+      SERVER_URL = config.status_url;
+    }
+  } catch (e) {
+    console.error('Error loading config.json:', e);
+  }
+}
+
+function parseTimestamp(filename) {
+  if (typeof filename !== 'string') return null;
+
+  let base = filename;
+  const lanePrefixMatch = filename.match(/^(lane\d+)_/);
+  if (lanePrefixMatch) {
+    base = filename.slice(lanePrefixMatch[0].length);
+  }
+
+  base = base.replace(/\.mp4$/, '');
+
+  const match = base.match(/^(\d{8})-(\d{6})$/);
+  if (!match) return null;
+
+  const [_, ymd, hms] = match;
+  const isoString = `${ymd.slice(0,4)}-${ymd.slice(4,6)}-${ymd.slice(6,8)}T${hms.slice(0,2)}:${hms.slice(2,4)}:${hms.slice(4,6)}Z`;
+  const dt = new Date(isoString);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+function formatTimestamp(filename) {
+  const d = parseTimestamp(filename);
+  return d ? d.toUTCString() : '';
+}
+
+function toDateTimeLocalInput(filename) {
+  const dt = parseTimestamp(filename);
+  if (!dt) return '';
+  const year = dt.getUTCFullYear();
+  const month = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(dt.getUTCDate()).padStart(2, '0');
+  const hour = String(dt.getUTCHours()).padStart(2, '0');
+  const minute = String(dt.getUTCMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hour}:${minute}`;
+}
+
+async function getAvailableClips(lane) {
+  const res = await fetch(`${SERVER_URL}/archive/${lane}/available`);
+  if (!res.ok) throw new Error('Failed to fetch available clips');
+  return await res.json();
+}
+
+function filterClips(clips, start, end) {
+  return clips.filter(filename => {
+    const dt = parseTimestamp(filename);
+    if (!dt) return false;
+    return dt >= start && dt <= end;
+  });
+}
+
+async function downloadClip(lane, filename) {
+  const fileWithExt = filename.endsWith('.mp4') ? filename : filename + '.mp4';
+
+  // Build download URL without port, using current page's protocol and hostname only
+  const protocol = window.location.protocol; // e.g. 'http:'
+  const hostname = window.location.hostname; // e.g. 'yourserver.com' or 'localhost'
+  const url = `${protocol}//${hostname}/archive/${lane}/${fileWithExt}`;
+
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to download clip ${fileWithExt}`);
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileWithExt;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+}
+
+async function updateTimeInputsForLane(lane) {
+  try {
+    const clipsData = await getAvailableClips(lane);
+    if (!clipsData || !clipsData.clips || clipsData.clips.length === 0) {
+      startTimeInput.value = '';
+      endTimeInput.value = '';
+      statusDiv.textContent = 'No clips available for this lane.';
+      return;
+    }
+
+    const clips = clipsData.clips;
+    const earliest = clips[0];
+    const latest = clips[clips.length - 1];
+
+    startTimeInput.value = toDateTimeLocalInput(earliest);
+    endTimeInput.value = toDateTimeLocalInput(latest);
+    statusDiv.textContent = clipsData.date_range || `Time range set for ${lane}`;
+    errorDiv.textContent = '';
+  } catch (err) {
+    errorDiv.textContent = `Error loading ${lane}: ${err.message}`;
+  }
+}
+
+const laneSelect = document.getElementById('laneSelect');
+const startTimeInput = document.getElementById('startTime');
+const endTimeInput = document.getElementById('endTime');
+const fetchClipsBtn = document.getElementById('fetchClipsBtn');
+const clipsListDiv = document.getElementById('clipsList');
+const downloadAllBtn = document.getElementById('downloadAllBtn');
+const statusDiv = document.getElementById('status');
+const errorDiv = document.getElementById('error');
+const returnDashboardBtn = document.getElementById('returnDashboardBtn');
+
+let filteredClips = [];
+let currentLane = '';
+
+laneSelect.addEventListener('change', () => {
+  updateTimeInputsForLane(laneSelect.value);
+});
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await loadConfig();
+  updateTimeInputsForLane(laneSelect.value);
+});
+
+fetchClipsBtn.addEventListener('click', async () => {
+  errorDiv.textContent = '';
+  statusDiv.textContent = '';
+  clipsListDiv.innerHTML = '';
+  downloadAllBtn.disabled = true;
+
+  const lane = laneSelect.value;
+  currentLane = lane;
+  const startStr = startTimeInput.value;
+  const endStr = endTimeInput.value;
+
+  if (!startStr || !endStr) {
+    errorDiv.textContent = 'Please select both start and end times.';
+    return;
+  }
+
+  const start = new Date(startStr + 'Z');
+  const end = new Date(endStr + 'Z');
+
+  if (start >= end) {
+    errorDiv.textContent = 'Start time must be before end time.';
+    return;
+  }
+
+  statusDiv.textContent = 'Fetching available clips...';
+
+  try {
+    const clipsData = await getAvailableClips(lane);
+    if (!clipsData || !clipsData.clips) {
+      statusDiv.textContent = 'No clips data received.';
+      return;
+    }
+    filteredClips = filterClips(clipsData.clips, start, end);
+    if (filteredClips.length === 0) {
+      statusDiv.textContent = 'No clips found in that time range.';
+      return;
+    }
+
+    statusDiv.textContent = `Found ${filteredClips.length} clips.`;
+    clipsListDiv.innerHTML = '';
+    filteredClips.forEach(filename => {
+      const div = document.createElement('div');
+      div.className = 'clipItem';
+      div.textContent = `${filename}  (${formatTimestamp(filename)})`;
+      clipsListDiv.appendChild(div);
+    });
+
+    downloadAllBtn.disabled = false;
+  } catch (err) {
+    errorDiv.textContent = err.message;
+  }
+});
+
+downloadAllBtn.addEventListener('click', async () => {
+  if (!filteredClips.length || !currentLane) return;
+
+  downloadAllBtn.disabled = true;
+  statusDiv.textContent = `Downloading ${filteredClips.length} clips...`;
+  errorDiv.textContent = '';
+
+  for (let i = 0; i < filteredClips.length; i++) {
+    const filename = filteredClips[i];
+    try {
+      statusDiv.textContent = `Downloading clip ${i + 1} of ${filteredClips.length}: ${filename}`;
+      await downloadClip(currentLane, filename);
+    } catch (err) {
+      errorDiv.textContent = `Error downloading clip ${filename}: ${err.message}`;
+      break;
+    }
+  }
+
+  statusDiv.textContent = 'Download complete.';
+  downloadAllBtn.disabled = false;
+});
+
+returnDashboardBtn.addEventListener('click', () => {
+  window.location.href = 'index.html';
+});
+</script>
+
+</body>
+</html>

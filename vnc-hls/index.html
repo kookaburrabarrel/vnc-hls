@@ -16,7 +16,20 @@
     align-items: center;
   }
   h1 {
-    margin: 1rem 0;
+    margin: 1rem 0 0.5rem 0;
+  }
+  .refresh-button {
+    margin-bottom: 1rem;
+    padding: 0.4rem 1rem;
+    background: #333;
+    color: #eee;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  .refresh-button:hover {
+    background: #555;
   }
   .dashboard {
     display: flex;
@@ -61,180 +74,98 @@
     display: inline-block;
   }
   .status-ok {
-    background-color: #4caf50; /* green */
-  }
-  .status-warning {
-    background-color: #ffeb3b; /* yellow */
+    background-color: #4caf50;
   }
   .status-error {
-    background-color: #f44336; /* red */
+    background-color: #f44336;
   }
-  @media (max-width: 600px) {
-    .dashboard {
-      flex-direction: column;
-      width: 100vw;
-    }
-    .feed {
-      margin-bottom: 1rem;
-    }
+  .nav-button {
+    margin: 1rem 0 2rem 0;
+    padding: 0.5rem 1rem;
+    background: #333;
+    color: #eee;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    display: inline-block;
+  }
+  .nav-button:hover {
+    background: #555;
   }
 </style>
 </head>
 <body>
-  <h1>T-Bar Gates Dashboard</h1>
-  <div class="dashboard">
-    <div class="feed" id="feed1">
-      <video id="video1" autoplay muted></video>
-      <label>192.168.4.101 (Lane 1)</label>
-      <div class="status" id="status1"><span class="status-dot status-warning"></span><span>Loading...</span></div>
-    </div>
-    <div class="feed" id="feed2">
-      <video id="video2" autoplay muted></video>
-      <label>192.168.4.102 (Lane 2)</label>
-      <div class="status" id="status2"><span class="status-dot status-warning"></span><span>Loading...</span></div>
-    </div>
-    <div class="feed" id="feed3">
-      <video id="video3" autoplay muted></video>
-      <label>192.168.4.103 (Lane 3)</label>
-      <div class="status" id="status3"><span class="status-dot status-warning"></span><span>Loading...</span></div>
-    </div>
-    <div class="feed" id="feed4">
-      <video id="video4" autoplay muted></video>
-      <label>192.168.4.104 (Lane 4)</label>
-      <div class="status" id="status4"><span class="status-dot status-warning"></span><span>Loading...</span></div>
-    </div>
+<h1>T-Bar Gates Dashboard</h1>
+<button class="refresh-button" onclick="location.reload()">Refresh</button>
+<div class="dashboard" id="dashboard">
+  <div class="feed" id="lane1">
+    <video muted autoplay playsinline></video>
+    <label>Lane 1</label>
+    <div class="status"><span class="status-dot" id="status-dot-1"></span><span id="status-text-1">Loading...</span></div>
   </div>
+  <div class="feed" id="lane2">
+    <video muted autoplay playsinline></video>
+    <label>Lane 2</label>
+    <div class="status"><span class="status-dot" id="status-dot-2"></span><span id="status-text-2">Loading...</span></div>
+  </div>
+  <div class="feed" id="lane3">
+    <video muted autoplay playsinline></video>
+    <label>Lane 3</label>
+    <div class="status"><span class="status-dot" id="status-dot-3"></span><span id="status-text-3">Loading...</span></div>
+  </div>
+  <div class="feed" id="lane4">
+    <video muted autoplay playsinline></video>
+    <label>Lane 4</label>
+    <div class="status"><span class="status-dot" id="status-dot-4"></span><span id="status-text-4">Loading...</span></div>
+  </div>
+</div>
+
+<a href="search.html" class="nav-button">Download Clips</a>
 
 <script>
-  const streams = [
-    '/hls/lane1.m3u8',
-    '/hls/lane2.m3u8',
-    '/hls/lane3.m3u8',
-    '/hls/lane4.m3u8',
-  ];
+  const lanes = 4;
+  for (let i = 1; i <= lanes; i++) {
+    const videoElem = document.querySelector(`#lane${i} video`);
+    const statusDot = document.getElementById(`status-dot-${i}`);
+    const statusText = document.getElementById(`status-text-${i}`);
 
-  function setupHls(videoId, streamUrl) {
-    const video = document.getElementById(videoId);
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hls.loadSource(streamUrl);
-      hls.attachMedia(video);
+    const hls = new Hls();
+    hls.loadSource(`hls/lane${i}/stream.m3u8`);
+    hls.attachMedia(videoElem);
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      videoElem.play();
+    });
+    hls.on(Hls.Events.ERROR, (event, data) => {
+      statusDot.className = 'status-dot status-error';
+      statusText.textContent = 'Stream error';
+      console.error(`Lane ${i} HLS error:`, data);
+    });
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        video.play();
-      });
+    async function pollStatus() {
+      try {
+        const res = await fetch(`status/lane${i}.json?cache_bust=${Date.now()}`, {cache: 'no-store'});
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const statusJson = await res.json();
 
-      // Auto-reconnect on fatal errors
-      hls.on(Hls.Events.ERROR, function(event, data) {
-        console.error('HLS error', data);
-        if (data.fatal) {
-          console.warn(`Fatal error on ${streamUrl}, trying to recover/reload...`);
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.log('Network error - trying to recover');
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.log('Media error - trying to recover');
-              hls.recoverMediaError();
-              break;
-            default:
-              // Destroy and reinitialize after delay
-              hls.destroy();
-              setTimeout(() => {
-                setupHls(videoId, streamUrl);
-              }, 5000);
-              break;
-          }
+        if (statusJson.status === 'ok') {
+          statusDot.className = 'status-dot status-ok';
+          statusText.textContent = 'Streaming';
+        } else {
+          statusDot.className = 'status-dot status-error';
+          statusText.textContent = statusJson.message || 'Error';
         }
-      });
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = streamUrl;
-      video.addEventListener('error', () => {
-        console.warn(`Video error on ${videoId}, retrying in 5 seconds`);
-        setTimeout(() => {
-          video.src = streamUrl;
-          video.load();
-          video.play();
-        }, 5000);
-      });
-      video.addEventListener('loadedmetadata', () => {
-        video.play();
-      });
-    } else {
-      console.warn('HLS not supported for', streamUrl);
-    }
-  }
-
-  streams.forEach((url, i) => {
-    setupHls('video' + (i + 1), url);
-  });
-
-  // Status polling
-
-  function updateStatus(laneNum, statusObj) {
-    const statusDiv = document.getElementById(`status${laneNum}`);
-    if (!statusDiv) return;
-
-    statusDiv.innerHTML = '';
-
-    const dot = document.createElement('span');
-    dot.classList.add('status-dot');
-
-    let text = 'Unknown';
-    if (!statusObj) {
-      dot.classList.add('status-error');
-      text = 'No status data';
-    } else {
-      const s = statusObj.status ? statusObj.status.toLowerCase() : 'unknown';
-      switch (s) {
-        case 'ok':
-          dot.classList.add('status-ok');
-          text = 'OK';
-          break;
-        case 'retrying':
-        case 'warning':
-          dot.classList.add('status-warning');
-          text = statusObj.message || 'Warning';
-          break;
-        case 'error':
-        case 'disconnected':
-        case 'failed':
-          dot.classList.add('status-error');
-          text = statusObj.message || 'Error';
-          break;
-        default:
-          dot.classList.add('status-warning');
-          text = statusObj.message || 'Unknown';
+      } catch (e) {
+        statusDot.className = 'status-dot status-error';
+        statusText.textContent = 'Offline';
       }
     }
-
-    statusDiv.appendChild(dot);
-    const spanText = document.createElement('span');
-    spanText.textContent = text;
-    statusDiv.appendChild(spanText);
+    pollStatus();
+    setInterval(pollStatus, 10000);
   }
-
-  async function fetchStatus(laneNum) {
-    try {
-      const resp = await fetch(`/status/lane${laneNum}.json?_=${Date.now()}`);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const data = await resp.json();
-      updateStatus(laneNum, data);
-    } catch (e) {
-      updateStatus(laneNum, null);
-      console.error(`Failed to fetch status for lane ${laneNum}:`, e);
-    }
-  }
-
-  function pollStatuses() {
-    for (let i = 1; i <= streams.length; i++) {
-      fetchStatus(i);
-    }
-  }
-
-  pollStatuses();
-  setInterval(pollStatuses, 10000); // every 10 seconds
 </script>
 </body>
 </html>
+

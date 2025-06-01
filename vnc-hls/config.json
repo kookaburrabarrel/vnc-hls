@@ -1,0 +1,6 @@
+{
+  "archive_url": "http://192.168.1.11:5000",
+  "status_url": "http://192.168.1.11:5001",
+  "archiver_port": "5000",
+  "archive_status_port": "5001"
+}

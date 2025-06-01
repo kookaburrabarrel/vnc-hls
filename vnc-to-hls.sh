@@ -15,7 +15,6 @@ mkdir -p "$LOG_DIR"
 MAX_RETRIES=10
 RETRY_DELAY=5  # seconds base delay, increases linearly per retry
 
-# Function to check if IP is reachable
 ping_check() {
   ping -c 1 -W 1 "$1" &>/dev/null
 }
@@ -36,6 +35,12 @@ run_lane() {
   local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
   local STATUS_FILE="/home/user/status/lane${LANE_NUM}.json"
   local retry_count=0
+
+  local LANE_HLS_DIR="$HLS_BASE/lane${LANE_NUM}"
+  mkdir -p "$LANE_HLS_DIR"
+
+  local HLS_PLAYLIST="$LANE_HLS_DIR/stream.m3u8"
+  local HLS_SEGMENT_PATTERN="$LANE_HLS_DIR/segment_%Y%m%d-%H%M%S.ts"
 
   echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
@@ -74,9 +79,6 @@ run_lane() {
 
       sleep 5
 
-      HLS_PLAYLIST="$HLS_BASE/lane${LANE_NUM}.m3u8"
-      HLS_SEGMENT_PATTERN="$HLS_BASE/lane${LANE_NUM}_%s.ts"
-
       retry_count=0
       echo "{\"status\":\"ok\",\"ip\":\"$IP\",\"message\":\"streaming\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
 
@@ -89,7 +91,8 @@ run_lane() {
         -hls_time 4 \
         -hls_list_size 43200 \
         -hls_flags append_list \
-        -hls_segment_filename "$HLS_BASE/lane${LANE_NUM}_$(date +%s).ts" \
+        -strftime 1 \
+        -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
         "$HLS_PLAYLIST"
 
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] ffmpeg exited unexpectedly, killing vncviewer and Xvfb"
