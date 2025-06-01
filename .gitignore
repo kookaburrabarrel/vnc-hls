@@ -1,3 +1,4 @@
 # Ignore all .ts and .mp4 video files
 *.ts
 *.mp4
+venv/
