@@ -1,4 +1,4 @@
-# Ignore all .ts and .mp4 video files
+*.log
 *.ts
 *.mp4
-venv/
+*.m3u8
