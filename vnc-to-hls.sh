@@ -33,7 +33,7 @@ run_lane() {
   local LANE_NUM=$3
 
   local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
-  local STATUS_FILE="/home/user/status/lane${LANE_NUM}.json"
+  local STATUS_FILE="/home/user/vnc-hls/status/lane${LANE_NUM}.json"
   local retry_count=0
 
   local LANE_HLS_DIR="$HLS_BASE/lane${LANE_NUM}"
