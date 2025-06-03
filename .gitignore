@@ -2,3 +2,10 @@
 *.ts
 *.mp4
 *.m3u8
+
+# Ignore all hidden files and folders
+.*
+
+# But do NOT ignore .git directory and .gitignore file
+!.git/
+!.gitignore
