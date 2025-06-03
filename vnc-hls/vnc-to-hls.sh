@@ -91,6 +91,7 @@ run_lane() {
         -hls_time 4 \
         -hls_list_size 43200 \
         -hls_flags append_list \
+        -strftime 1 \
         -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
         "$HLS_PLAYLIST"
 

@@ -1,402 +1,3 @@
-    # ffmpeg command to concatenate and convert .ts files into one mp4 clip
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", concat_file,
-        "-c", "copy",
-        output_path
-    ]
-
-    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    os.remove(concat_file)
-    print(f"Creating clip: {output_path}")
-
-def cleanup_old_clips():
-    cutoff = time.time() - RETENTION_SECONDS
-    for lane in LANES:
-        lane_path = os.path.join(ARCHIVE_DIR, lane)
-        if not os.path.isdir(lane_path):
-            continue
-        for filename in os.listdir(lane_path):
-            if filename.endswith(".mp4"):
-                filepath = os.path.join(lane_path, filename)
-                if os.path.getmtime(filepath) < cutoff:
-                    os.remove(filepath)
-                    print(f"Deleted old clip: {filepath}")
-
-def archive_loop():
-    while True:
-        for lane in LANES:
-            lane_dir = os.path.join(HLS_DIR, lane)
-            if not os.path.isdir(lane_dir):
-                print(f"Lane directory missing: {lane_dir}")
-                continue
-            ts_files = sorted([f for f in os.listdir(lane_dir) if f.endswith(".ts")])
-            if not ts_files:
-                print(f"No TS files for {lane}")
-                continue
-
-            # Select last N segments to cover ~5 minutes (assuming ~10s per segment)
-            segment_count = CLIP_DURATION_SECONDS // 10
-            segments_to_use = ts_files[-segment_count:]
-
-            create_clip(lane, segments_to_use)
-        cleanup_old_clips()
-        time.sleep(CLIP_DURATION_SECONDS)
-
-@app.route('/archive/<lane>/available')
-def available_times(lane):
-    lane_path = os.path.join(ARCHIVE_DIR, lane)
-    if not os.path.isdir(lane_path):
-        return jsonify([])
-
-    clips = sorted([
-        f.replace('.mp4', '') for f in os.listdir(lane_path)
-        if f.endswith('.mp4')
-    ])
-    return jsonify(clips)
-
-@app.route('/archive/<lane>/<timestamp>')
-def get_clip(lane, timestamp):
-    clip_path = os.path.join(ARCHIVE_DIR, lane, f"{timestamp}.mp4")
-    if not os.path.isfile(clip_path):
-        return "Not Found", 404
-    return send_file(clip_path, as_attachment=True)
-
-if __name__ == '__main__':
-    import threading
-    threading.Thread(target=archive_loop, daemon=True).start()
-    app.run(host='0.0.0.0', port=5000)
-EOF
-
-sudo reboot
-uit
-exit
-./vnc-to-hls.sh
-nohup vnc-to.hls.sh
-nohup vnc-to-hls.sh
-ls
-nohup ./vnc-to-hls.sh
-sudo apt-get install tmux
-tmux new -s archiver
-tmux new -s hls
-tmux attach -t hls
-tmux attach -t archiver
-tmux new -s archiver
-ls
-cd vnc-hls
-ls
-mv index.html index6.html
-ls
-nano-index.html
-nano index.html
-sudo reboot
-python3 archiver.py
-ls
-python3 archive.py
-./vnc-to-hls.sh
-s
-ls
-./vnc-to-hls.sh
-tmux new archiver
-tmux new s- archiver
-tmux new -s archiver
-tmux new -s hls
-ls
-tmux attach -t hls
-cd logs
-ls
-cd ..
-rm -r logs
-cd vnc-hls
-cd log
-cd logs
-ls
-ps -ef | grep ffmpeg | grep -v grep
-ps -eo pid,etime,pcpu,pmem,cmd | grep ffmpeg | grep -v grep
-kill 1792 1795 1799 1800
-ps
-ps -eo pid,etime,pcpu,pmem,cmd | grep ffmpeg | grep -v grep
-ps -eo pid,etime,pcpu,pmem,cmd | grep archive.sh | grep -v grep
-cd ..
-ps -eo pid,etime,pcpu,pmem,cmd | grep archive.sh | grep -v grep
-ls
-cat vnc-to-hls.sh
-cd vnc-hls
-cat index.html
-cd ..
-cat archive.py
-cat > ~/vnc-hls/vnc-to-hls.sh << 'EOF'
-#!/bin/bash
-set -euo pipefail
-
-FRAME_RATE=10
-CAPTURE_RES=480x800
-VAAPI_DEVICE="/dev/dri/renderD128"
-
-IPS=("192.168.4.101" "192.168.4.102" "192.168.4.103" "192.168.4.104")
-DISPLAYS=(":11" ":12" ":13" ":14")
-
-HLS_BASE="/home/user/vnc-hls/hls"
-LOG_DIR="/home/user/vnc-hls/logs"
-mkdir -p "$LOG_DIR"
-
-MAX_RETRIES=10
-RETRY_DELAY=5  # seconds base delay, increases linearly per retry
-
-ping_check() {
-  ping -c 1 -W 1 "$1" &>/dev/null
-}
-
-sanitize_ip() {
-  echo "$1" | tr '.' '_'
-}
-
-timestamp() {
-  date +%s
-}
-
-run_lane() {
-  local IP=$1
-  local DISPLAY_NUM=$2
-  local LANE_NUM=$3
-
-  local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
-  local STATUS_FILE="/home/user/status/lane${LANE_NUM}.json"
-  local retry_count=0
-
-  local LANE_HLS_DIR="$HLS_BASE/lane${LANE_NUM}"
-  mkdir -p "$LANE_HLS_DIR"
-
-  local HLS_PLAYLIST="$LANE_HLS_DIR/stream.m3u8"
-  local HLS_SEGMENT_PATTERN="$LANE_HLS_DIR/segment_%Y%m%d-%H%M%S.ts"
-
-  echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
-
-  while true; do
-    {
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting setup for lane $LANE_NUM (IP $IP, DISPLAY $DISPLAY_NUM), attempt $((retry_count + 1))"
-
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Checking network reachability for $IP"
-      until ping_check "$IP"; do
-        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] $IP unreachable, retrying in 5 seconds..."
-        sleep 5
-      done
-
-      XAUTH_FILE=$(mktemp /tmp/.Xauthority.XXXXXX)
-      export XAUTHORITY="$XAUTH_FILE"
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Generated XAUTHORITY file at $XAUTH_FILE"
-
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting Xvfb on display $DISPLAY_NUM"
-      Xvfb "$DISPLAY_NUM" -screen 0 480x800x24 &
-      XVFB_PID=$!
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Xvfb started with PID $XVFB_PID"
-
-      sleep 2
-
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Generating xauth entry for $DISPLAY_NUM"
-      xauth generate "$DISPLAY_NUM" . trusted
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] xauth entry generated"
-
-      export DISPLAY="$DISPLAY_NUM"
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] DISPLAY set to $DISPLAY"
-
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting vncviewer on $IP (lane $LANE_NUM)"
-      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:5900" -passwd /home/user/.vnc/passwd &
-      VNC_PID=$!
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] vncviewer started with PID $VNC_PID"
-
-      sleep 5
-
-      retry_count=0
-      echo "{\"status\":\"ok\",\"ip\":\"$IP\",\"message\":\"streaming\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
-
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting ffmpeg capturing $DISPLAY and streaming to $HLS_PLAYLIST"
-      ffmpeg -hide_banner -loglevel info \
-        -f x11grab -r $FRAME_RATE -s $CAPTURE_RES -i "$DISPLAY" \
-        -vaapi_device "$VAAPI_DEVICE" \
-        -vf 'format=nv12,hwupload' \
-        -c:v h264_vaapi -b:v 1M -maxrate 1M -bufsize 2M -g 30 -sc_threshold 0 \
-        -hls_time 4 \
-        -hls_list_size 43200 \
-        -hls_flags append_list \
-        -hls_segment_filename "$HLS_SEGMENT_PATTERN" \
-        "$HLS_PLAYLIST"
-
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] ffmpeg exited unexpectedly, killing vncviewer and Xvfb"
-      kill $VNC_PID $XVFB_PID || true
-      wait $VNC_PID $XVFB_PID 2>/dev/null || true
-
-      rm -f "$XAUTH_FILE"
-
-      retry_count=$((retry_count + 1))
-      echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
-
-      if (( retry_count >= MAX_RETRIES )); then
-        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] Max retries reached on lane $LANE_NUM. Waiting 5 minutes before retrying..."
-        sleep 300
-        retry_count=0
-        echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
-        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Restarting retries for lane $LANE_NUM."
-      else
-        backoff=$((RETRY_DELAY * retry_count))
-        echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Waiting $backoff seconds before next retry on lane $LANE_NUM"
-        sleep $backoff
-      fi
-    } >> "$LOG_FILE" 2>&1
-  done
-}
-
-# Start all lanes in background
-for i in "${!IPS[@]}"; do
-  run_lane "${IPS[$i]}" "${DISPLAYS[$i]}" "$((i + 1))" &
-done
-
-wait
-EOF
-
-cd vnc-hls
-cd ..
-cat > ~/vnc-hls/index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>T-Bar Gates Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-<style>
-  body {
-    margin: 0;
-    background: #111;
-    color: #eee;
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  h1 {
-    margin: 1rem 0;
-  }
-  .dashboard {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 0.5rem;
-    width: 95vw;
-  }
-  .feed {
-    flex: 1 1 0;
-    display: flex;
-    flex-direction: column;
-    background: #222;
-    border-radius: 6px;
-    padding: 0.5rem;
-    box-sizing: border-box;
-  }
-  .feed video {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-    background: black;
-  }
-  .feed label {
-    margin-top: 0.5rem;
-    text-align: center;
-    font-weight: bold;
-  }
-  .status {
-    margin-top: 0.25rem;
-    text-align: center;
-    font-weight: normal;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-  }
-  .status-dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-  }
-  .status-ok {
-    background-color: #4caf50;
-  }
-  .status-error {
-    background-color: #f44336;
-  }
-</style>
-</head>
-<body>
-<h1>T-Bar Gates Dashboard</h1>
-<div class="dashboard" id="dashboard">
-  <div class="feed" id="lane1">
-    <video controls muted autoplay playsinline></video>
-    <label>Lane 1</label>
-    <div class="status"><span class="status-dot" id="status-dot-1"></span><span id="status-text-1">Loading...</span></div>
-  </div>
-  <div class="feed" id="lane2">
-    <video controls muted autoplay playsinline></video>
-    <label>Lane 2</label>
-    <div class="status"><span class="status-dot" id="status-dot-2"></span><span id="status-text-2">Loading...</span></div>
-  </div>
-  <div class="feed" id="lane3">
-    <video controls muted autoplay playsinline></video>
-    <label>Lane 3</label>
-    <div class="status"><span class="status-dot" id="status-dot-3"></span><span id="status-text-3">Loading...</span></div>
-  </div>
-  <div class="feed" id="lane4">
-    <video controls muted autoplay playsinline></video>
-    <label>Lane 4</label>
-    <div class="status"><span class="status-dot" id="status-dot-4"></span><span id="status-text-4">Loading...</span></div>
-  </div>
-</div>
-
-<script>
-  const lanes = 4;
-  for (let i = 1; i <= lanes; i++) {
-    const videoElem = document.querySelector(`#lane${i} video`);
-    const statusDot = document.getElementById(`status-dot-${i}`);
-    const statusText = document.getElementById(`status-text-${i}`);
-
-    const hls = new Hls();
-    hls.loadSource(`hls/lane${i}/stream.m3u8`);
-    hls.attachMedia(videoElem);
-    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-      videoElem.play();
-    });
-    hls.on(Hls.Events.ERROR, (event, data) => {
-      statusDot.className = 'status-dot status-error';
-      statusText.textContent = 'Stream error';
-      console.error(`Lane ${i} HLS error:`, data);
-    });
-
-    // Periodic polling of JSON status for each lane every 10 seconds
-    async function pollStatus() {
-      try {
-        const res = await fetch(`status/lane${i}.json?cache_bust=${Date.now()}`, {cache: 'no-store'});
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const statusJson = await res.json();
-
-        if (statusJson.status === 'ok') {
-          statusDot.className = 'status-dot status-ok';
-          statusText.textContent = 'Streaming';
-        } else {
-          statusDot.className = 'status-dot status-error';
-          statusText.textContent = statusJson.message || 'Error';
-        }
-      } catch (e) {
-        statusDot.className = 'status-dot status-error';
-        statusText.textContent = 'Offline';
-      }
-    }
-    pollStatus();
-    setInterval(pollStatus, 10000);
-  }
-</script>
 </body>
 </html>
 EOF
@@ -1998,3 +1599,402 @@ EOF
 python3 archive_status.py
 cat archive_status.py
 python3 archive_status.py
+ls
+rm archive.old
+rm d5.html
+cd vnc-hls
+ls
+rm 666.html
+rm s.html
+rm index2.html
+rm index5.html
+rm index6.html
+rm indexHMM.html
+rm index-new.html
+rm index-old.html
+ls
+rm d4.html
+rm d5.html
+rm d666.html
+rm d7.html
+rm d8.html
+rm d9.html
+rm dl2.html
+rm dl3.html
+rm dl.html
+rm fixed_dl3.html
+ls
+rm index99html
+rm index99.html
+rm d6.html
+ls
+rm beta.html
+rm beta2.html
+ls
+git add .
+cd ..
+[200~cat > .gitignore << 'EOF'
+# Ignore all .ts and .mp4 video files
+*.ts
+*.mp4
+EOF
+
+~
+[200~cat > .gitignore << 'EOF'
+# Ignore all .ts and .mp4 video files
+*.ts
+*.mp4
+EOF
+
+~cat > .gitignore << 'EOF'
+# Ignore all .ts and .mp4 video files
+*.ts
+*.mp4
+EOF
+
+~cat > .gitignore << 'EOF'
+# Ignore all .ts and .mp4 video files
+*.ts
+*.mp4
+EOF
+
+cat > .gitignore << 'EOF'
+# Ignore all .ts and .mp4 video files
+*.ts
+*.mp4
+EOF
+
+git add .
+git commit -m "progress"
+git push
+ls
+rm test.html
+rm *.old*
+ls
+rm vnc-to-hls-old.sh
+ls
+cd vnc-hls
+nano index.html
+nano search.html
+git add .
+git commit -m "more"
+git push
+cd ..
+ls
+cd vnc-hls
+ls
+rm archive.html
+ls
+rm archive_30min_blocks.py
+ls
+git add .
+git commit -m "cleanup"
+git push
+ls
+cd ..
+ls
+cd tempaltes
+cd templates
+ls
+cd ..
+rm -r templates
+ls
+echo "venv/" >> .gitignore
+git add .
+git commit -m "cleanup"
+git push
+tmux attach -t time
+tmux
+tmux killwindow
+tmux kill-window
+tmux ls
+tmux kill-window
+tmux ls
+python3 archive.py
+cat archive.py
+cd vnc-hls
+cd archice
+cd archive
+cd lane1
+ls
+cd ..
+cd.
+cd ..
+rm archive.py
+nano archive.py
+python3 archive.py
+cd vnc-hls
+cd hls
+ls
+cd lane1
+ls
+cd ..
+rm archive.py
+nano archive.py
+python3 archive.py
+mv archive.py archive.old
+nano archive.py
+python3 archive.py
+ls
+cd vnc-hls
+ls
+rm -r venv
+rm novnc
+rm -r novnc
+ls
+cd stataus
+cd status
+ls
+cd ..
+rm -r status
+ls
+rm -r dev-scripts
+df -h
+./cleanup.sh
+df -h
+crontab -l
+systemctl status cron
+grep CRON /var/log/syslog
+grep 'cleanup.sh' /var/log/syslog | grep CRON
+tail -n 50 -f ~/vnc-hls/logs/cleanup.log
+systemctl status cron
+date
+grep 'cleanup.sh' /var/log/syslog.1 | grep CRON
+zgrep 'cleanup.sh' /var/log/syslog.*.gz | grep CRON
+crontab -l
+ls
+lsblk
+sudo vgdisplay ubuntu-vg
+sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+df -Th /
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+df -Th /
+systemctl list-units --type=service
+last reboot
+tmux ls
+ls
+cd ..
+ls
+cd status
+ls
+cd ..
+mv archive*.py start-novnc.sh vnc-to-hls.sh vnc-to-hls.sh.save vnc-to-hls.service status ~/vnc-hls/
+ls
+cd vnc-hls
+ls
+rm archive_30min_blocks.py
+ls
+chmod +x ~/vnc-hls/archive.py ~/vnc-hls/archive_status.py ~/vnc-hls/cleanup.sh
+sudo nano /etc/systemd/system/archive.service
+sudo nano /etc/systemd/system/archive_status.service
+sudo nano /etc/systemd/system/cleanup.service
+sudo systemctl daemon-reload
+sudo systemctl enable archive.service
+sudo systemctl enable archive_status.service
+sudo systemctl enable cleanup.service
+sudo reboot
+df -h
+systemctl status archive.service
+systemctl list-units --type=service --state=running
+sudo nano /etc/systemd/system/vnc-to-hls.service
+sudo systemctl daemon-reload
+sudo systemctl enable vnc-to-hls.service
+sudo reboot
+ls
+rm 'ystemctl list-units --type=service --state=running'
+ls
+cd vnc-hls
+ls
+cd logs
+ls
+systemctl list-units --type=service --all
+journalctl -u vnc-to-hls.service -f
+cd ..
+ls
+./vnc-to-hls.sh
+cd ..
+git restore status
+ls
+cd vnc-hls
+cd logs
+ls
+cd ..
+./vnc-to-hls.sh
+journalctl -u vnc-to-hls.service -f
+systemctl list-units --type=service --all
+sudo apt update
+sudo apt install avahi-daemon
+sudo systemctl enable avahi-daemon --now
+sudo hostnamectl set-hostname dashboard
+ping dashboard.local
+systemctl status avahi-daemon
+hostname
+avahi-browse -a
+sudo apt install avahi-utils
+avahi-browse -a
+user@vnctranscoder:~/vnc-hls$ avahi-browse -a
++ enp1s0 IPv4 Kyocera ECOSYS M3540idn                       UNIX Printer         local
++ enp1s0 IPv4 Kyocera ECOSYS M3540idn                       Internet Printer     local
++ enp1s0 IPv4 Kyocera ECOSYS M3540idn                       Secure Internet Printer local
++ enp1s0 IPv4 Kyocera ECOSYS M3540idn                       PDL Printer          local
++ enp1s0 IPv6 FF28001235A109B0DF233921                      _spotify-connect._tcp local
++ enp1s0 IPv6 FF280012F2693D5A8E618568                      _spotify-connect._tcp local
++ enp1s0 IPv4 FF28001235A109B0DF233921                      _spotify-connect._tcp local
++ enp1s0 IPv4 FF280012F2693D5A8E618568                      _spotify-connect._tcp local
++ enp1s0 IPv6 Fireplace                                     Web Site             local
++ enp1s0 IPv6 Fireplace                                     AirPlay Remote Video local
++ enp1s0 IPv6 00226C012FBE@Fireplace                        AirTunes Remote Audio local
++ enp1s0 IPv6 Fireplace                                     _linkplay._tcp       local
++ enp1s0 IPv6 Brother MFC-J1010DW                           PDL Printer          local
++ enp1s0 IPv6 Brother MFC-J1010DW                           UNIX Printer         local
++ enp1s0 IPv6 Brother MFC-J1010DW                           Internet Printer     local
++ enp1s0 IPv6 Brother MFC-J1010DW                           _scanner._tcp        local
++ enp1s0 IPv6 Brother MFC-J1010DW                           Web Site             local
++ enp1s0 IPv6 Brother MFC-J1010DW                           _uscan._tcp          local
++ enp1s0 IPv4 Fireplace                                     Web Site             local
++ enp1s0 IPv4 Fireplace                                     AirPlay Remote Video local
++ enp1s0 IPv4 00226C012FBE@Fireplace                        AirTunes Remote Audio local
++ enp1s0 IPv4 Fireplace                                     _linkplay._tcp       local
++ enp1s0 IPv4 Brother MFC-J1010DW                           PDL Printer          local
++ enp1s0 IPv4 Brother MFC-J1010DW                           UNIX Printer         local
++ enp1s0 IPv4 Brother MFC-J1010DW                           Internet Printer     local
++ enp1s0 IPv4 Brother MFC-J1010DW                           _scanner._tcp        local
++ enp1s0 IPv4 Brother MFC-J1010DW                           Web Site             local
++ enp1s0 IPv4 Brother MFC-J1010DW                           _uscan._tcp          local
++ enp1s0 IPv4 921891618                                     _teamviewer._tcp     local
++ enp1s0 IPv4 1406044388                                    _teamviewer._tcp     local
++ enp1s0 IPv4 Brother MFC-L2710DW series                    PDL Printer          local
++ enp1s0 IPv4 Brother MFC-L2710DW series                    UNIX Printer         local
++ enp1s0 IPv4 Brother MFC-L2710DW series                    Internet Printer     local
++ enp1s0 IPv4 Brother MFC-L2710DW series                    _scanner._tcp        local
++ enp1s0 IPv4 Brother MFC-L2710DW series                    Web Site             local
++ enp1s0 IPv4 Brother MFC-L2710DW series                    _uscan._tcp          local
++ enp1s0 IPv6 Brother MFC-L2710DW series                    PDL Printer          local
++ enp1s0 IPv6 Brother MFC-L2710DW series                    UNIX Printer         local
++ enp1s0 IPv6 Brother MFC-L2710DW series                    Internet Printer     local
++ enp1s0 IPv6 Brother MFC-L2710DW series                    _scanner._tcp        local
++ enp1s0 IPv6 Brother MFC-L2710DW series                    Web Site             local
++ enp1s0 IPv6 Brother MFC-L2710DW series                    _uscan._tcp          local
++ enp1s0 IPv4 1288640429                                    _teamviewer._tcp     local
++ enp1s0 IPv4 1265466606                                    _teamviewer._tcp     local
++ enp1s0 IPv4 1628680260                                    _teamviewer._tcp     local
++ enp1s0 IPv4 1445490529                                    _teamviewer._tcp     local
++ enp1s0 IPv4 Brother MFC-L2690DW                           PDL Printer          local
++ enp1s0 IPv4 Brother MFC-L2690DW                           UNIX Printer         local
++ enp1s0 IPv4 Brother MFC-L2690DW                           Internet Printer     local
++ enp1s0 IPv4 Brother MFC-L2690DW                           _scanner._tcp        local
++ enp1s0 IPv4 Brother MFC-L2690DW                           Web Site             local
++ enp1s0 IPv4 Brother MFC-L2690DW                           _privet._tcp         local
++ enp1s0 IPv4 Brother MFC-L2690DW                           _uscan._tcp          local
++ enp1s0 IPv6 Brother MFC-L2690DW                           PDL Printer          local
++ enp1s0 IPv6 Brother MFC-L2690DW                           UNIX Printer         local
++ enp1s0 IPv6 Brother MFC-L2690DW                           Internet Printer     local
++ enp1s0 IPv6 Brother MFC-L2690DW                           _scanner._tcp        local
++ enp1s0 IPv6 Brother MFC-L2690DW                           Web Site             local
++ enp1s0 IPv6 Brother MFC-L2690DW                           _privet._tcp         local
++ enp1s0 IPv6 Brother MFC-L2690DW                           _uscan._tcp          local
++ enp1s0 IPv6 HP Color LaserJet Pro 3201 [AD3C4C]           PDL Printer          local
++ enp1s0 IPv6 HP Color LaserJet Pro 3201 [AD3C4C]           Web Site             local
++ enp1s0 IPv6 HP Color LaserJet Pro 3201 [AD3C4C]           _cdm._tcp            local
++ enp1s0 IPv6 HP Color LaserJet Pro 3201 [AD3C4C]           Internet Printer     local
++ enp1s0 IPv6 HP Color LaserJet Pro 3201 [AD3C4C]           Secure Internet Printer local
++ enp1s0 IPv4 HP Color LaserJet Pro 3201 [AD3C4C]           PDL Printer          local
++ enp1s0 IPv4 HP Color LaserJet Pro 3201 [AD3C4C]           Web Site             local
++ enp1s0 IPv4 HP Color LaserJet Pro 3201 [AD3C4C]           _cdm._tcp            local
++ enp1s0 IPv4 HP Color LaserJet Pro 3201 [AD3C4C]           Internet Printer     local
++ enp1s0 IPv4 HP Color LaserJet Pro 3201 [AD3C4C]           Secure Internet Printer local
++ enp1s0 IPv4 0                                             _teamviewer._tcp     local
++ enp1s0 IPv4 Brother MFC-J805DW                            PDL Printer          local
++ enp1s0 IPv4 Brother MFC-J805DW                            UNIX Printer         local
++ enp1s0 IPv4 Brother MFC-J805DW                            Internet Printer     local
++ enp1s0 IPv4 Brother MFC-J805DW                            _scanner._tcp        local
++ enp1s0 IPv4 Brother MFC-J805DW                            Web Site             local
++ enp1s0 IPv4 Brother MFC-J805DW                            _uscan._tcp          local
++ enp1s0 IPv6 Brother MFC-J805DW                            PDL Printer          local
++ enp1s0 IPv6 Brother MFC-J805DW                            UNIX Printer         local
++ enp1s0 IPv6 Brother MFC-J805DW                            Internet Printer     local
++ enp1s0 IPv6 Brother MFC-J805DW                            _scanner._tcp        local
++ enp1s0 IPv6 Brother MFC-J805DW                            Web Site             local
++ enp1s0 IPv6 Brother MFC-J805DW                            _uscan._tcp          local
++ enp1s0 IPv4 248248143                                     _teamviewer._tcp     local
++ enp1s0 IPv4 1346488388                                    _teamviewer._tcp     local
++ enp1s0 IPv4 Luke___s iPhone                               _rdlink._tcp         local
++ enp1s0 IPv6 Luke___s iPhone                               _rdlink._tcp         local
++ enp1s0 IPv4 SonosLibraryServer                            Web Site             local
++ enp1s0 IPv6 SonosLibraryServer                            Web Site             local
++ enp1s0 IPv4 Kyocera ECOSYS M3540idn                       Web Site             local
++ enp1s0 IPv4 Kyocera ECOSYS M3540idn                       Secure Web Site      local
++ enp1s0 IPv6 D40f-J09-2b4f483a2be0499afc5daf409b12140a     _googlecast._tcp     local
++ enp1s0 IPv4 D40f-J09-2b4f483a2be0499afc5daf409b12140a     _googlecast._tcp     local
++ enp1s0 IPv4 Brother MFC-L2710DW series [b422009d1da4]     PDL Printer          local
++ enp1s0 IPv4 Brother MFC-L2710DW series [b422009d1da4]     UNIX Printer         local
++ enp1s0 IPv4 Brother MFC-L2710DW series [b422009d1da4]     Internet Printer     local
++ enp1s0 IPv4 Brother MFC-L2710DW series [b422009d1da4]     _scanner._tcp        local
++ enp1s0 IPv4 Brother MFC-L2710DW series [b422009d1da4]     Web Site             local
++ enp1s0 IPv4 Brother MFC-L2710DW series [b422009d1da4]     _uscan._tcp          local
++ enp1s0 IPv6 Brother MFC-L2710DW series [b422009d1da4]     PDL Printer          local
++ enp1s0 IPv6 Brother MFC-L2710DW series [b422009d1da4]     UNIX Printer         local
++ enp1s0 IPv6 Brother MFC-L2710DW series [b422009d1da4]     Internet Printer     local
++ enp1s0 IPv6 Brother MFC-L2710DW series [b422009d1da4]     _scanner._tcp        local
++ enp1s0 IPv6 Brother MFC-L2710DW series [b422009d1da4]     Web Site             local
++ enp1s0 IPv6 Brother MFC-L2710DW series [b422009d1da4]     _uscan._tcp          local
++ enp1s0 IPv4 Stairs                                        Web Site             local
++ enp1s0 IPv4 Stairs                                        AirPlay Remote Video local
++ enp1s0 IPv4 00226C25AD01@Stairs                           AirTunes Remote Audio local
++ enp1s0 IPv4 Stairs                                        _linkplay._tcp       local
++ enp1s0 IPv6 Stairs                                        Web Site             local
++ enp1s0 IPv6 Stairs                                        AirPlay Remote Video local
++ enp1s0 IPv6 00226C25AD01@Stairs                           AirTunes Remote Audio local
++ enp1s0 IPv6 Stairs                                        _linkplay._tcp       local
++ enp1s0 IPv4 Brother VC-500W 4890                          UNIX Printer         local
++ enp1s0 IPv4 Brother VC-500W 4890                          Secure Internet Printer local
++ enp1s0 IPv4 Brother VC-500W 4890                          Internet Printer     local
++ enp1s0 IPv4 Brother VC-500W 4890                          Web Site             local
++ enp1s0 IPv6 Brother VC-500W 4890                          UNIX Printer         local
++ enp1s0 IPv6 Brother VC-500W 4890                          Secure Internet Printer local
++ enp1s0 IPv6 Brother VC-500W 4890                          Internet Printer     local
++ enp1s0 IPv6 Brother VC-500W 4890                          Web Site             local
++ enp1s0 IPv4 OctoPrint instance on raspberrypi             Web Site             local
++ enp1s0 IPv4 Brother HL-L2350DW series                     PDL Printer          local
++ enp1s0 IPv4 Brother HL-L2350DW series                     UNIX Printer         local
++ enp1s0 IPv4 Brother HL-L2350DW series                     Internet Printer     local
++ enp1s0 IPv4 Brother HL-L2350DW series                     Web Site             local
++ enp1s0 IPv4 Brother HL-L2350DW series                     _privet._tcp         local
++ enp1s0 IPv6 Brother HL-L2350DW series                     PDL Printer          local
++ enp1s0 IPv6 Brother HL-L2350DW series                     UNIX Printer         local
++ enp1s0 IPv6 Brother HL-L2350DW series                     Internet Printer     local
++ enp1s0 IPv6 Brother HL-L2350DW series                     Web Site             local
++ enp1s0 IPv6 Brother HL-L2350DW series                     _privet._tcp         local
++ enp1s0 IPv6 lmh___s MacBook Pro                           _companion-link._tcp local
++ enp1s0 IPv4 lmh___s MacBook Pro                           _companion-link._tcp local
++ enp1s0 IPv6 VC-500W4890 [04:fe:a1:56:a6:ba]               Workstation          local
++ enp1s0 IPv4 VC-500W4890 [04:fe:a1:56:a6:ba]               Workstation          local
++ enp1s0 IPv4 OctoPrint instance on raspberrypi             _octoprint._tcp      local
++ enp1s0 IPv4 Canon MF440 Series                            _privet._tcp         local
++ enp1s0 IPv4 Canon MF440 Series                            _uscan._tcp          local
++ enp1s0 IPv4 Canon MF440 Series                            _scanner._tcp        local
++ enp1s0 IPv4 Canon MF440 Series                            PDL Printer          local
++ enp1s0 IPv4 Canon MF440 Series                            Secure Internet Printer local
++ enp1s0 IPv4 Canon MF440 Series                            Internet Printer     local
+systemctl status avahi-daemon
+ping dashboard-hostname.local
+ping dashboard.local
+hostname
+hostname -I
+sudo tee /etc/avahi/services/dashboard.service > /dev/null << 'EOF'
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+  <name replace-wildcards="yes">Dashboard on %h</name>
+  <service>
+    <type>_http._tcp</type>
+    <port>80</port>
+  </service>
+</service-group>
+EOF
+
+ls
+rm hboard-hostname.local
+ls
+sudo systemctl restart avahi-daemon
+avahi-browse -a
