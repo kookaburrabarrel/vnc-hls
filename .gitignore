@@ -1,3 +1,4 @@
+# Ignore logs and video output
 *.log
 *.ts
 *.mp4
@@ -6,6 +7,10 @@
 # Ignore all hidden files and folders
 .*
 
-# But do NOT ignore .git directory and .gitignore file
-!.git/
+# But do NOT ignore .gitignore and .gitkeep
 !.gitignore
+!.gitkeep
+
+# Ignore all files in logs/, but keep .gitkeep
+logs/*
+!logs/.gitkeep
