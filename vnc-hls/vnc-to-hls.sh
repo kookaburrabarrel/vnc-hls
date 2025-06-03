@@ -42,7 +42,23 @@ run_lane() {
   local HLS_PLAYLIST="$LANE_HLS_DIR/stream.m3u8"
   local HLS_SEGMENT_PATTERN="$LANE_HLS_DIR/segment_%Y%m%d-%H%M%S.ts"
 
-  echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+  # Helper function to update status JSON with conditional message
+  update_status() {
+    local status=$1
+    local message=""
+    if (( retry_count == 0 )) && [[ "$status" == "error" ]]; then
+      message="Retrying..."
+    else
+      if [[ "$status" == "error" ]]; then
+        message="retry $retry_count"
+      else
+        message="$2"
+      fi
+    fi
+    echo "{\"status\":\"$status\",\"ip\":\"$IP\",\"message\":\"$message\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+  }
+
+  update_status error
 
   while true; do
     {
@@ -80,7 +96,7 @@ run_lane() {
       sleep 5
 
       retry_count=0
-      echo "{\"status\":\"ok\",\"ip\":\"$IP\",\"message\":\"streaming\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+      update_status ok "streaming"
 
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting ffmpeg capturing $DISPLAY and streaming to $HLS_PLAYLIST"
       ffmpeg -hide_banner -loglevel info \
@@ -102,13 +118,13 @@ run_lane() {
       rm -f "$XAUTH_FILE"
 
       retry_count=$((retry_count + 1))
-      echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+      update_status error
 
       if (( retry_count >= MAX_RETRIES )); then
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [WARN] Max retries reached on lane $LANE_NUM. Waiting 5 minutes before retrying..."
         sleep 300
         retry_count=0
-        echo "{\"status\":\"error\",\"ip\":\"$IP\",\"message\":\"retry $retry_count\",\"last_updated\":\"$(date '+%Y-%m-%d %H:%M:%S')\"}" > "$STATUS_FILE"
+        update_status error
         echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Restarting retries for lane $LANE_NUM."
       else
         backoff=$((RETRY_DELAY * retry_count))
