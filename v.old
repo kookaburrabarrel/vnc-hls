@@ -5,13 +5,7 @@ FRAME_RATE=10
 CAPTURE_RES=480x800
 VAAPI_DEVICE="/dev/dri/renderD128"
 
-CONFIG_FILE="$(dirname "$0")/config.json"
-
-# Read lanes IPs and ports from config.json
-mapfile -t IPS < <(jq -r '.lanes | to_entries | .[].value.ip' "$CONFIG_FILE")
-mapfile -t PORTS < <(jq -r '.lanes | to_entries | .[].value.port' "$CONFIG_FILE")
-
-# Displays must match the number of lanes
+IPS=("192.168.4.101" "192.168.4.102" "192.168.4.103" "192.168.4.104")
 DISPLAYS=(":11" ":12" ":13" ":14")
 
 HLS_BASE="/home/user/vnc-hls/hls"
@@ -19,10 +13,14 @@ LOG_DIR="/home/user/vnc-hls/logs"
 mkdir -p "$LOG_DIR"
 
 MAX_RETRIES=10
-RETRY_DELAY=5
+RETRY_DELAY=5  # seconds base delay, increases linearly per retry
 
 ping_check() {
   ping -c 1 -W 1 "$1" &>/dev/null
+}
+
+sanitize_ip() {
+  echo "$1" | tr '.' '_'
 }
 
 timestamp() {
@@ -31,9 +29,8 @@ timestamp() {
 
 run_lane() {
   local IP=$1
-  local PORT=$2
-  local DISPLAY_NUM=$3
-  local LANE_NUM=$4
+  local DISPLAY_NUM=$2
+  local LANE_NUM=$3
 
   local LOG_FILE="$LOG_DIR/lane${LANE_NUM}.log"
   local STATUS_FILE="/home/user/vnc-hls/status/lane${LANE_NUM}.json"
@@ -45,6 +42,7 @@ run_lane() {
   local HLS_PLAYLIST="$LANE_HLS_DIR/stream.m3u8"
   local HLS_SEGMENT_PATTERN="$LANE_HLS_DIR/segment_%Y%m%d-%H%M%S.ts"
 
+  # Helper function to update status JSON with conditional message
   update_status() {
     local status=$1
     local message=""
@@ -64,7 +62,7 @@ run_lane() {
 
   while true; do
     {
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting setup for lane $LANE_NUM (IP $IP, PORT $PORT, DISPLAY $DISPLAY_NUM), attempt $((retry_count + 1))"
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting setup for lane $LANE_NUM (IP $IP, DISPLAY $DISPLAY_NUM), attempt $((retry_count + 1))"
 
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Checking network reachability for $IP"
       until ping_check "$IP"; do
@@ -90,8 +88,8 @@ run_lane() {
       export DISPLAY="$DISPLAY_NUM"
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] DISPLAY set to $DISPLAY"
 
-      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting vncviewer on $IP:$PORT (lane $LANE_NUM)"
-      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:$PORT" -passwd /home/user/.vnc/passwd &
+      echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting vncviewer on $IP (lane $LANE_NUM)"
+      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:5900" -passwd /home/user/.vnc/passwd &
       VNC_PID=$!
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] vncviewer started with PID $VNC_PID"
 
@@ -137,8 +135,9 @@ run_lane() {
   done
 }
 
+# Start all lanes in background
 for i in "${!IPS[@]}"; do
-  run_lane "${IPS[$i]}" "${PORTS[$i]}" "${DISPLAYS[$i]}" "$((i + 1))" &
+  run_lane "${IPS[$i]}" "${DISPLAYS[$i]}" "$((i + 1))" &
 done
 
 wait
