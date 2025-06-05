@@ -1,3 +1,4 @@
+user@dashboard:~/vnc-hls$ cat config.json
 {
   "archive_url": "http://192.168.1.11:5000",
   "status_url": "http://192.168.1.11:5001",
