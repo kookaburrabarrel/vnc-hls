@@ -12,6 +12,7 @@ apt install -y \
   ffmpeg \
   libva-drm2 libva-x11-2 vainfo \
   tigervnc-standalone-server \
+  tigervnc-viewer \
   x11vnc \
   xvfb \
   xauth \
