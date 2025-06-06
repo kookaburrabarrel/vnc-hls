@@ -91,7 +91,7 @@ run_lane() {
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] DISPLAY set to $DISPLAY"
 
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting vncviewer on $IP:$PORT (lane $LANE_NUM)"
-      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:$PORT" -passwd /home/user/.vnc/passwd &
+      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:$PORT" -passwd /home/user/vnc-hls/.vnc/passwd &
       VNC_PID=$!
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] vncviewer started with PID $VNC_PID"
 
@@ -142,3 +142,4 @@ for i in "${!IPS[@]}"; do
 done
 
 wait
+
