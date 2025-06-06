@@ -1,14 +1,16 @@
-user@dashboard:~/vnc-hls$ cat config.json
 {
   "archive_url": "http://192.168.1.11:5000",
   "status_url": "http://192.168.1.11:5001",
   "archiver_port": "5000",
   "archive_status_port": "5001",
-  "lanes": {
-    "lane1": { "ip": "192.168.4.101", "port": 5900 },
-    "lane2": { "ip": "192.168.4.102", "port": 5900 },
-    "lane3": { "ip": "192.168.4.103", "port": 5900 },
-    "lane4": { "ip": "192.168.4.104", "port": 5900 }
+  "gate_count": "",
+  "title": "",
+  "gates": {
+    "T-Bar": {
+      "lane1": { "ip": "192.168.4.101", "port": 5900 },
+      "lane2": { "ip": "192.168.4.102", "port": 5900 },
+      "lane3": { "ip": "192.168.4.103", "port": 5900 },
+      "lane4": { "ip": "192.168.4.104", "port": 5900 }
+    }
   }
 }
-
