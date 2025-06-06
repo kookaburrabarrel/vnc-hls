@@ -4,8 +4,8 @@
 *.mp4
 *.m3u8
 
-# Ignore all hidden files and folders
-.*
+.*        # ignore all dotfiles
+!.vnc/passwd  # except this one
 
 # But do NOT ignore .gitignore and .gitkeep
 !.gitignore
