@@ -1,24 +1,24 @@
 {
-  "archive_url": "http://192.168.1.11:5000",
-  "status_url": "http://192.168.1.11:5001",
+  "archive_url": "http://192.168.59.2:5000",
+  "status_url": "http://192.168.59.2:5001",
   "gate_count": "1",
-  "title": "T-Bar Dashboard",
+  "title": "Catamount Dashboard",
   "gates": {
-    "T-Bar": {
+    "Ridge Quad": {
       "lane1": {
-        "ip": "192.168.4.101",
+        "ip": "192.168.2.111",
         "port": 5900
       },
       "lane2": {
-        "ip": "192.168.4.102",
+        "ip": "192.168.2.112",
         "port": 5900
       },
       "lane3": {
-        "ip": "192.168.4.103",
+        "ip": "192.168.2.113",
         "port": 5900
       },
       "lane4": {
-        "ip": "192.168.4.104",
+        "ip": "192.168.2.114",
         "port": 5900
       }
     }
