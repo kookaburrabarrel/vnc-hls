@@ -8,8 +8,8 @@ VAAPI_DEVICE="/dev/dri/renderD128"
 CONFIG_FILE="$(dirname "$0")/config.json"
 
 # Read lanes IPs and ports from config.json
-mapfile -t IPS < <(jq -r '.lanes | to_entries | .[].value.ip' "$CONFIG_FILE")
-mapfile -t PORTS < <(jq -r '.lanes | to_entries | .[].value.port' "$CONFIG_FILE")
+mapfile -t IPS < <(jq -r '.gates | to_entries[] | .value | to_entries[] | .value.ip' "$CONFIG_FILE")
+mapfile -t PORTS < <(jq -r '.gates | to_entries[] | .value | to_entries[] | .value.port' "$CONFIG_FILE")
 
 # Displays must match the number of lanes
 DISPLAYS=(":11" ":12" ":13" ":14")
