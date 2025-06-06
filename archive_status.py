@@ -3,14 +3,10 @@ from flask_cors import CORS
 import os
 from datetime import datetime
 
-app = Flask(__name__, static_folder='/home/user/vnc-hls', static_url_path='')
+app = Flask(__name__)
 CORS(app)
 
 ARCHIVE_ROOT = '/home/user/vnc-hls/archive'
-
-@app.route('/')
-def root():
-    return app.send_static_file('dl3.html')
 
 @app.route('/archive/<lane>/available')
 def available_clips(lane):
@@ -21,14 +17,12 @@ def available_clips(lane):
     clips = []
     for f in os.listdir(lane_dir):
         if f.endswith('.mp4') and f.startswith(f"{lane}_"):
-            # Return full filename without extension (keep lane prefix)
-            clips.append(f[:-4])  # Remove only '.mp4'
+            clips.append(f[:-4])  # Strip '.mp4'
     clips.sort()
 
     date_range = None
     if clips:
         try:
-            # Extract timestamps by removing lane prefix + underscore
             timestamps = [clip[len(lane)+1:] for clip in clips]
             start_dt = datetime.strptime(timestamps[0], "%Y%m%d-%H%M%S")
             end_dt = datetime.strptime(timestamps[-1], "%Y%m%d-%H%M%S")
@@ -51,3 +45,4 @@ def serve_clip(lane, clip):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)
+

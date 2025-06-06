@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+export TZ="America/New_York"
 
 FRAME_RATE=10
 CAPTURE_RES=480x800
