@@ -8,8 +8,8 @@ VAAPI_DEVICE="/dev/dri/renderD128"
 CONFIG_FILE="$(dirname "$0")/config.json"
 
 # Read lanes IPs and ports from config.json
-mapfile -t IPS < <(jq -r '.lanes | to_entries | .[].value.ip' "$CONFIG_FILE")
-mapfile -t PORTS < <(jq -r '.lanes | to_entries | .[].value.port' "$CONFIG_FILE")
+mapfile -t IPS < <(jq -r '.gates | to_entries[] | .value | to_entries[] | .value.ip' "$CONFIG_FILE")
+mapfile -t PORTS < <(jq -r '.gates | to_entries[] | .value | to_entries[] | .value.port' "$CONFIG_FILE")
 
 # Displays must match the number of lanes
 DISPLAYS=(":11" ":12" ":13" ":14")
@@ -91,7 +91,7 @@ run_lane() {
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] DISPLAY set to $DISPLAY"
 
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] Starting vncviewer on $IP:$PORT (lane $LANE_NUM)"
-      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:$PORT" -passwd /home/user/.vnc/passwd &
+      vncviewer -ViewOnly=1 -Fullscreen=1 "$IP:$PORT" -passwd /home/user/vnc-hls/.vnc/passwd &
       VNC_PID=$!
       echo "[`date '+%Y-%m-%d %H:%M:%S'`] [INFO] vncviewer started with PID $VNC_PID"
 
@@ -142,3 +142,4 @@ for i in "${!IPS[@]}"; do
 done
 
 wait
+
