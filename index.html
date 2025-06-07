@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>T-Bar Dashboard</title>
+<title></title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
   body {
@@ -98,7 +98,7 @@
 </style>
 </head>
 <body>
-<h1>T-Bar Dashboard</h1>
+<h1 id="page-title">Loading...</h1>
 <button class="refresh-button" onclick="location.reload()">Refresh</button>
 <div class="dashboard" id="dashboard">
   <div class="feed" id="lane1">
@@ -165,6 +165,24 @@
     pollStatus();
     setInterval(pollStatus, 10000);
   }
+</script>
+
+<script>
+  fetch('config.json', {cache: 'no-store'})
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(config => {
+      if (config.title) {
+        document.title = config.title;
+        const h1 = document.getElementById('page-title');
+        if (h1) h1.textContent = config.title;
+      }
+    })
+    .catch(err => {
+      console.warn('Failed to load config.json:', err);
+    });
 </script>
 </body>
 </html>
