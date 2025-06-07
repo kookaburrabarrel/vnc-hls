@@ -69,11 +69,11 @@
     }
     #status {
       margin-top: 1em;
-      color: #4caf50; /* green */
+      color: #4caf50;
     }
     #error {
       margin-top: 1em;
-      color: #f44336; /* red */
+      color: #f44336;
     }
     .centered-button {
       display: block;
@@ -112,10 +112,10 @@
   <option value="lane4">Lane 4</option>
 </select>
 
-<label for="startTime">Start Time (UTC):</label>
+<label for="startTime">Start Time (ET):</label>
 <input type="datetime-local" id="startTime" />
 
-<label for="endTime">End Time (UTC):</label>
+<label for="endTime">End Time (ET):</label>
 <input type="datetime-local" id="endTime" />
 
 <button id="fetchClipsBtn">Fetch Clips</button>
@@ -130,7 +130,7 @@
 <button id="returnDashboardBtn" class="centered-button">Return to Dashboard</button>
 
 <script>
-let SERVER_URL = 'http://localhost:5001';  // default port 5001
+let SERVER_URL = 'http://localhost:5001';
 
 async function loadConfig() {
   try {
@@ -147,18 +147,14 @@ async function loadConfig() {
 
 function parseTimestamp(filename) {
   if (typeof filename !== 'string') return null;
-
   let base = filename;
   const lanePrefixMatch = filename.match(/^(lane\d+)_/);
   if (lanePrefixMatch) {
     base = filename.slice(lanePrefixMatch[0].length);
   }
-
   base = base.replace(/\.mp4$/, '');
-
   const match = base.match(/^(\d{8})-(\d{6})$/);
   if (!match) return null;
-
   const [_, ymd, hms] = match;
   const isoString = `${ymd.slice(0,4)}-${ymd.slice(4,6)}-${ymd.slice(6,8)}T${hms.slice(0,2)}:${hms.slice(2,4)}:${hms.slice(4,6)}Z`;
   const dt = new Date(isoString);
@@ -197,12 +193,9 @@ function filterClips(clips, start, end) {
 
 async function downloadClip(lane, filename) {
   const fileWithExt = filename.endsWith('.mp4') ? filename : filename + '.mp4';
-
-  // Build download URL without port, using current page's protocol and hostname only
-  const protocol = window.location.protocol; // e.g. 'http:'
-  const hostname = window.location.hostname; // e.g. 'yourserver.com' or 'localhost'
+  const protocol = window.location.protocol;
+  const hostname = window.location.hostname;
   const url = `${protocol}//${hostname}/archive/${lane}/${fileWithExt}`;
-
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to download clip ${fileWithExt}`);
   const blob = await res.blob();
@@ -224,11 +217,9 @@ async function updateTimeInputsForLane(lane) {
       statusDiv.textContent = 'No clips available for this lane.';
       return;
     }
-
     const clips = clipsData.clips;
     const earliest = clips[0];
     const latest = clips[clips.length - 1];
-
     startTimeInput.value = toDateTimeLocalInput(earliest);
     endTimeInput.value = toDateTimeLocalInput(latest);
     statusDiv.textContent = clipsData.date_range || `Time range set for ${lane}`;
@@ -257,6 +248,28 @@ laneSelect.addEventListener('change', () => {
 
 window.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
+
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+  function toEasternDateTimeLocalString(date) {
+    const options = {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    };
+    const parts = new Intl.DateTimeFormat('en-CA', options).formatToParts(date);
+    const get = type => parts.find(p => p.type === type)?.value;
+    return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+  }
+
+  startTimeInput.value = toEasternDateTimeLocalString(oneHourAgo);
+  endTimeInput.value = toEasternDateTimeLocalString(now);
+
   updateTimeInputsForLane(laneSelect.value);
 });
 
@@ -276,8 +289,8 @@ fetchClipsBtn.addEventListener('click', async () => {
     return;
   }
 
-  const start = new Date(startStr + 'Z');
-  const end = new Date(endStr + 'Z');
+  const start = new Date(startStr + ':00Z');
+  const end = new Date(endStr + ':00Z');
 
   if (start >= end) {
     errorDiv.textContent = 'Start time must be before end time.';
