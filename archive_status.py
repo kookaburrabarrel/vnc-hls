@@ -10,7 +10,7 @@ ARCHIVE_ROOT = '/home/user/vnc-hls/archive'
 
 @app.route('/')
 def root():
-    return app.send_static_file('dl3.html')
+    return app.send_static_file('search.html')
 
 @app.route('/archive/<lane>/available')
 def available_clips(lane):

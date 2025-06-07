@@ -8,7 +8,6 @@ WorkingDirectory=/home/user/vnc-hls
 ExecStart=/usr/bin/python3 /home/user/vnc-hls/archive_status.py
 Restart=always
 RestartSec=5
-User=user
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target

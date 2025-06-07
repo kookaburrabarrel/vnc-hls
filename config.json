@@ -1,6 +1,6 @@
 {
-  "archive_url": "http://192.168.59.2:5000",
-  "status_url": "http://192.168.59.2:5001",
+  "archive_url": "http://192.168.1.11:5000",
+  "status_url": "http://192.168.1.11:5001",
   "gate_count": "1",
   "title": "Catamount Dashboard",
   "gates": {
