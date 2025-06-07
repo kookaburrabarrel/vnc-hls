@@ -1,0 +1,14 @@
+[Unit]
+Description=Archive VNC Segments
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/user/vnc-hls
+ExecStart=/usr/bin/python3 /home/user/vnc-hls/archive.py
+Restart=always
+RestartSec=5
+User=user
+
+[Install]
+WantedBy=multi-user.target
