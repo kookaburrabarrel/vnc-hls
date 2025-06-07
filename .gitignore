@@ -14,3 +14,7 @@
 # Ignore all files in logs/, but keep .gitkeep
 logs/*
 !logs/.gitkeep
+
+# Ignore status json
+status/lane*.json
+
