@@ -144,26 +144,37 @@
       console.error(`Lane ${i} HLS error:`, data);
     });
 
-    async function pollStatus() {
-      try {
-        const res = await fetch(`status/lane${i}.json?cache_bust=${Date.now()}`, {cache: 'no-store'});
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const statusJson = await res.json();
+    // Initial loading state: yellow dot, normal text
+    statusDot.className = 'status-dot';
+    statusDot.style.backgroundColor = 'goldenrod';  // yellow
+    statusText.textContent = 'Loading...';
 
-        if (statusJson.status === 'ok') {
-          statusDot.className = 'status-dot status-ok';
-          statusText.textContent = 'Streaming';
-        } else {
+    // Start polling after 5 seconds delay
+    setTimeout(() => {
+      statusDot.style.backgroundColor = ''; // remove yellow
+
+      async function pollStatus() {
+        try {
+          const res = await fetch(`status/lane${i}.json?cache_bust=${Date.now()}`, {cache: 'no-store'});
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const statusJson = await res.json();
+
+          if (statusJson.status === 'ok') {
+            statusDot.className = 'status-dot status-ok';
+            statusText.textContent = 'Streaming';
+          } else {
+            statusDot.className = 'status-dot status-error';
+            statusText.textContent = statusJson.message || 'Error';
+          }
+        } catch (e) {
           statusDot.className = 'status-dot status-error';
-          statusText.textContent = statusJson.message || 'Error';
+          statusText.textContent = 'Offline';
         }
-      } catch (e) {
-        statusDot.className = 'status-dot status-error';
-        statusText.textContent = 'Offline';
       }
-    }
-    pollStatus();
-    setInterval(pollStatus, 10000);
+
+      pollStatus();
+      setInterval(pollStatus, 10000);
+    }, 5000);
   }
 </script>
 
@@ -184,5 +195,13 @@
       console.warn('Failed to load config.json:', err);
     });
 </script>
+
+<script>
+  // Reload the page once every hour (3600000 milliseconds)
+  setTimeout(() => {
+    location.reload();
+  }, 3600000);
+</script>
+
 </body>
 </html>
